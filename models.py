@@ -108,18 +108,30 @@ class People(Base):
                f'{self.driving_licence},' \
                f'{self.id_car})'
 
+
+class Passengers(Base):
+    __tablename__ = 'passengers'
+
+    id_passengers = sq.Column(sq.Integer, primary_key=True)
+    id_drivers = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    id_passenger = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+
+    people = relationship(People, backref='passengers')
+
 class Transport(Base):
     __tablename__ = 'main_table'
 
     id_transport = sq.Column(sq.Integer, primary_key=True)
-    id_people = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    id_passenger = sq.Column(sq.Integer, sq.ForeignKey('passengers.id_passengers'), nullable=False)
     day_of_date = sq.Column(sq.Date)
+
     id_route = sq.Column(sq.Integer, sq.ForeignKey('route.id_route'), nullable=False)
-    man_to_job = sq.Column(sq.Integer)
-    man_with_job = sq.Column(sq.Integer)
+    #man_to_job = sq.Column(sq.Integer, sq.ForeignKey('people.last_name'), nullable=False)
+    #man_with_job = sq.Column(sq.Integer, sq.ForeignKey('people.last_name'), nullable=False)
     created_on = sq.Column(sq.DateTime(), default=datetime.now)
     updated_on = sq.Column(sq.DateTime(), default=datetime.now, onupdate=datetime.now)
 
+    passengers = relationship(Passengers, backref='main_table')
     people = relationship(People, backref='main_table')
     route = relationship(Route, backref='main_table')
 
@@ -131,6 +143,17 @@ class Transport(Base):
                f'{self.created_on},' \
                f'{self.updated_on})'
 
+
+class Man_to_job(Base):
+    __tablename__ = 'man_to_job'
+
+    id_mtj = sq.Column(sq.Integer, primary_key=True)
+    id_point = sq.Column(sq.Integer, sq.ForeignKey('people.id_point'), nullable=False)
+    id_people = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    id_transport = sq.Column(sq.Integer, sq.ForeignKey('transport.id_trasport'), nullable=False)
+
+    people = relationship(People, backref='man_to_job')
+    transport = relationship(Transport, backref='man_to_job')
 
 def create_tables(engine):
     Base.metadata.drop_all(engine)

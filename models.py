@@ -82,6 +82,17 @@ class Position(Base):
         return f'Position {self.id_position}: ' \
                f'{self.name_position},' \
 
+
+class Where_drive(Base):
+    __tablename__ = 'where_drive'
+
+    id_wd = sq.Column(sq.Integer, primary_key=True)
+    name_wd = sq.Column(sq.String(length=40))
+
+    def __str__(self):
+        return f'Where_drive {self.id_wd}: ' \
+            f'{self.name_wd}'
+
 class People(Base):
     __tablename__ = 'people'
 
@@ -109,51 +120,36 @@ class People(Base):
                f'{self.id_car})'
 
 
+class Drivers(Base):
+    __tablename__ = 'drivers'
+
+    id_driver = sq.Column(sq.Integer, primary_key=True)
+    driver = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    date = sq.Column(sq.Date, nullable=False)
+
+    people = relationship(People, backref='drivers')
+
+    def __str__(self):
+        return f'Drivers {self.id_driver}: ' \
+            f'({self.driver},' \
+            f'{self.date})'
+
+
 class Passengers(Base):
     __tablename__ = 'passengers'
 
-    id_passengers = sq.Column(sq.Integer, primary_key=True)
-    id_drivers = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
-    id_passenger = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    id_passenger = sq.Column(sq.Integer, primary_key=True)
+    passenger = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
+    driver = sq.Column(sq.Integer, sq.ForeignKey('drivers.id_driver'), nullable=False)
+    where_drive = sq.Column(sq.Integer, sq.ForeignKey('WD.id_wd'), nullable=False)
 
     people = relationship(People, backref='passengers')
-
-class Transport(Base):
-    __tablename__ = 'main_table'
-
-    id_transport = sq.Column(sq.Integer, primary_key=True)
-    id_passenger = sq.Column(sq.Integer, sq.ForeignKey('passengers.id_passengers'), nullable=False)
-    day_of_date = sq.Column(sq.Date)
-
-    id_route = sq.Column(sq.Integer, sq.ForeignKey('route.id_route'), nullable=False)
-    #man_to_job = sq.Column(sq.Integer, sq.ForeignKey('people.last_name'), nullable=False)
-    #man_with_job = sq.Column(sq.Integer, sq.ForeignKey('people.last_name'), nullable=False)
-    created_on = sq.Column(sq.DateTime(), default=datetime.now)
-    updated_on = sq.Column(sq.DateTime(), default=datetime.now, onupdate=datetime.now)
-
-    passengers = relationship(Passengers, backref='main_table')
-    people = relationship(People, backref='main_table')
-    route = relationship(Route, backref='main_table')
-
-    def __str__(self):
-        return f'Transport {self.id_transport}: ' \
-               f'({self.id_people},' \
-               f'{self.day_of_date},' \
-               f'{self.id_route},' \
-               f'{self.created_on},' \
-               f'{self.updated_on})'
+    drivers = relationship(Drivers, backref='drivers')
+    WD = relationship(Where_drive, backref='where_drive')
 
 
-class Man_to_job(Base):
-    __tablename__ = 'man_to_job'
-
-    id_mtj = sq.Column(sq.Integer, primary_key=True)
-    id_point = sq.Column(sq.Integer, sq.ForeignKey('people.id_point'), nullable=False)
-    id_people = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
-    id_transport = sq.Column(sq.Integer, sq.ForeignKey('transport.id_trasport'), nullable=False)
-
-    people = relationship(People, backref='man_to_job')
-    transport = relationship(Transport, backref='man_to_job')
+# created_on = sq.Column(sq.DateTime(), default=datetime.now)
+# updated_on = sq.Column(sq.DateTime(), default=datetime.now, onupdate=datetime.now)
 
 def create_tables(engine):
     Base.metadata.drop_all(engine)

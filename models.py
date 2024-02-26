@@ -26,7 +26,8 @@ class Route(Base):
     id_finish_route = sq.Column(sq.Integer, sq.ForeignKey('point.id_point'), nullable=False)
     distance = sq.Column(sq.Integer)
 
-    point = relationship(Point, backref='route')
+    point_start = relationship(Point, backref='start_route', foreign_keys=[id_start_route])
+    point_finish = relationship(Point, backref='finish_route', foreign_keys=[id_finish_route])
 
     def __str__(self):
         return f'Route {self.id_route}: ' \
@@ -141,11 +142,11 @@ class Passengers(Base):
     id_passenger = sq.Column(sq.Integer, primary_key=True)
     passenger = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
     driver = sq.Column(sq.Integer, sq.ForeignKey('drivers.id_driver'), nullable=False)
-    where_drive = sq.Column(sq.Integer, sq.ForeignKey('WD.id_wd'), nullable=False)
+    id_where_drive = sq.Column(sq.Integer, sq.ForeignKey('where_drive.id_wd'), nullable=False)
 
     people = relationship(People, backref='passengers')
     drivers = relationship(Drivers, backref='drivers')
-    WD = relationship(Where_drive, backref='where_drive')
+    where_drive = relationship(Where_drive, backref='where_drive')
 
 
 # created_on = sq.Column(sq.DateTime(), default=datetime.now)

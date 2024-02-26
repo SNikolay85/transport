@@ -56,7 +56,7 @@ def load_db(data_trans):
             session.add(people)
             session.commit()
         elif record['model'] == 'where_drive':
-            where_drive = Where_drive(id_wd=record['pf'],
+            where_drive = Where_drive(id_wd=record['pk'],
                                       name_wd=record['fields']['name'])
             session.add(where_drive)
             session.commit()
@@ -70,13 +70,13 @@ def load_db(data_trans):
             passenger = Passengers(id_passenger=record['pk'],
                                    passenger=record['fields']['passenger'],
                                    driver=record['fields']['driver'],
-                                   where_drive=record['fields']['WD'])
+                                   id_where_drive=record['fields']['WD'])
             session.add(passenger)
             session.commit()
     return print('Данные считаны и загружены в БД')
 
 
-DSN = 'postgresql://postgres:postgres@localhost:5432/trans_db'
+DSN = 'postgresql://nikolay:nikolay@localhost:5432/trans_db'
 engine = sqlalchemy.create_engine(DSN)
 
 create_tables(engine)
@@ -88,7 +88,7 @@ file_name = 'test_data.json'
 full_path = os.path.join(current, file_name)
 
 session = Session()
-
+print(full_path)
 with open(full_path, 'r', encoding='utf-8') as file:
     data = json.load(file)
 

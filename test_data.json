@@ -50,7 +50,7 @@
   {"model": "where_drive", "pk": 4, "fields": {"name": "из города"}},
   {"model": "drivers", "pk": 1, "fields": {"driver": 2, "date": "2024-10-25"}},
   {"model": "drivers", "pk": 2, "fields": {"driver": 1, "date": "2024-10-25"}},
-  {"model": "drivers", "pk": 3, "fields": {"driver": 3, "date": "2024-10-25"}},
+  {"model": "drivers", "pk": 3, "fields": {"driver": 3, "date": "2024-10-24"}},
   {"model": "passengers", "pk": 1, "fields": {"passenger": 4, "driver": 1, "WD": 1}},
   {"model": "passengers", "pk": 2, "fields": {"passenger": 3, "driver": 1, "WD": 1}},
   {"model": "passengers", "pk": 3, "fields": {"passenger": 4, "driver": 1, "WD": 2}},

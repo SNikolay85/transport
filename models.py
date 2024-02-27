@@ -14,7 +14,7 @@ class Point(Base):
 
     def __str__(self):
         return f'Point {self.id_point}: ' \
-               f'({self.name_point},' \
+               f'({self.name_point}, ' \
                f'{self.cost})'
 
 
@@ -58,9 +58,8 @@ class Car(Base):
     def __str__(self):
         return f'Car {self.id_car}: ' \
                f'({self.name_car}, ' \
-               f'{self.number_of_car},' \
-               f'{self.average_consumption},' \
-               f'{self.id_fuel})'
+               f'{self.number_of_car}, ' \
+               f'{self.average_consumption})'
 
 
 class Car_Fuel(Base):
@@ -73,6 +72,12 @@ class Car_Fuel(Base):
     car = relationship(Car, backref='car_fuel')
     fuel = relationship(Fuel, backref='car_fuel')
 
+
+    def __str__(self):
+        return f'Car_Fuel {self.id_car_fuel}: ' \
+               f'({self.id_car}, ' \
+               f'{self.id_fuel})'
+
 class Position(Base):
     __tablename__ = 'position'
 
@@ -81,7 +86,7 @@ class Position(Base):
 
     def __str__(self):
         return f'Position {self.id_position}: ' \
-               f'{self.name_position},' \
+               f'{self.name_position}'
 
 
 class Where_drive(Base):
@@ -106,18 +111,18 @@ class People(Base):
     driving_licence = sq.Column(sq.String(length=30))
     id_car = sq.Column(sq.Integer, sq.ForeignKey('car.id_car'), nullable=False)
 
-    point = relationship(Point, backref='point')
-    position = relationship(Position, backref='position')
+    point = relationship(Point, backref='people')
+    position = relationship(Position, backref='people')
     car = relationship(Car, backref='people')
 
     def __str__(self):
         return f'People {self.id_people}: ' \
                f'({self.first_name}, ' \
-               f'{self.last_name},' \
-               f'{self.patronymic},' \
-               f'{self.id_point},' \
-               f'{self.id_position},' \
-               f'{self.driving_licence},' \
+               f'{self.last_name}, ' \
+               f'{self.patronymic}, ' \
+               f'{self.id_point}, ' \
+               f'{self.id_position}, ' \
+               f'{self.driving_licence}, ' \
                f'{self.id_car})'
 
 
@@ -132,7 +137,7 @@ class Drivers(Base):
 
     def __str__(self):
         return f'Drivers {self.id_driver}: ' \
-            f'({self.driver},' \
+            f'({self.driver}, ' \
             f'{self.date})'
 
 
@@ -145,8 +150,15 @@ class Passengers(Base):
     id_where_drive = sq.Column(sq.Integer, sq.ForeignKey('where_drive.id_wd'), nullable=False)
 
     people = relationship(People, backref='passengers')
-    drivers = relationship(Drivers, backref='drivers')
-    where_drive = relationship(Where_drive, backref='where_drive')
+    drivers = relationship(Drivers, backref='passengers')
+    where_drive = relationship(Where_drive, backref='passengers')
+
+
+    def __str__(self):
+        return f'Passengers {self.id_passenger}: ' \
+            f'({self.passenger}, ' \
+            f'({self.driver}, ' \
+            f'{self.id_where_drive})'
 
 
 # created_on = sq.Column(sq.DateTime(), default=datetime.now)

@@ -21,6 +21,7 @@ subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subq
 res = session.query(Point).join(subq1, Point.id_point == subq1.c.id_point).all()
 list1 = []
 list2 = []
+print('hello world')
 for i in res:
     list1.append(i.id_point)
     print(i)

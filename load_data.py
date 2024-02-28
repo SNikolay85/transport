@@ -2,9 +2,11 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import os
 import json
+from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
 from models import create_tables, Point, Route, Fuel, Car, Car_Fuel, Position, People, Where_drive, Drivers, Passengers
 
+DSN = f'postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}'
 
 def load_db(data_trans):
     for record in data_trans:
@@ -78,7 +80,7 @@ def load_db(data_trans):
 
 if __name__ == '__main__':
 
-    DSN = 'postgresql://nikolay:nikolay@localhost:5432/trans_db'
+    #DSN = f'postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}'
     engine = sqlalchemy.create_engine(DSN)
 
     Session = sessionmaker(bind=engine)

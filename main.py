@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 
 from models import People, Point, Position, Car_Fuel, Fuel, Route, Car, Where_drive, Drivers, Passengers
 
-DSN = 'postgresql://nikolay:nikolay@localhost:5432/trans_db'
+from load_data import DSN
+
 engine = sqlalchemy.create_engine(DSN)
 
 Session = sessionmaker(bind=engine)

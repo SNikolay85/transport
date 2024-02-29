@@ -21,7 +21,7 @@ subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subq
 res = session.query(Point).join(subq1, Point.id_point == subq1.c.id_point).all()
 list1 = []
 list2 = []
-print('hello world1')
+print('hello world2')
 #git remote set-url origin https://github.com/SNikolay85/transport.git
 
 for i in res:

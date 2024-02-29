@@ -145,6 +145,7 @@ class Passengers(Base):
     __tablename__ = 'passengers'
 
     id_passenger = sq.Column(sq.Integer, primary_key=True)
+    order = sq.Column(sq.Integer, nullable=False)
     passenger = sq.Column(sq.Integer, sq.ForeignKey('people.id_people'), nullable=False)
     driver = sq.Column(sq.Integer, sq.ForeignKey('drivers.id_driver'), nullable=False)
     id_where_drive = sq.Column(sq.Integer, sq.ForeignKey('where_drive.id_wd'), nullable=False)
@@ -156,8 +157,9 @@ class Passengers(Base):
 
     def __str__(self):
         return f'Passengers {self.id_passenger}: ' \
-            f'({self.passenger}, ' \
-            f'({self.driver}, ' \
+            f'({self.order}, ' \
+            f'{self.passenger}, ' \
+            f'{self.driver}, ' \
             f'{self.id_where_drive})'
 
 

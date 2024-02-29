@@ -42,7 +42,7 @@
   {"model": "position", "pk": 3, "fields": {"name": "Инженер"}},
   {"model": "people", "pk": 1, "fields": {"first_name": "Николай", "last_name": "Спешилов", "patronymic": "Юрьевич", "id_point": 4, "id_position": 3, "driving_licence": "df 2323", "id_car": 4}},
   {"model": "people", "pk": 2, "fields": {"first_name": "Денис", "last_name": "Урдин", "patronymic": "Валерьевич", "id_point": 1, "id_position": 1, "driving_licence": "df 2424", "id_car": 3}},
-  {"model": "people", "pk": 3, "fields": {"first_name": "Ривгат", "last_name": "Сулейманов", "patronymic": "Рашидович", "id_point": 1, "id_position": 2, "driving_licence": "df 2525", "id_car": 2}},
+  {"model": "people", "pk": 3, "fields": {"first_name": "Ривгат", "last_name": "Сулейманов", "patronymic": "Рашидович", "id_point": 4, "id_position": 2, "driving_licence": "df 2525", "id_car": 2}},
   {"model": "people", "pk": 4, "fields": {"first_name": "Евгений", "last_name": "Сабаев", "patronymic": "Васильевич", "id_point": 2, "id_position": 1, "driving_licence": "df 2626", "id_car": 1}},
   {"model": "where_drive", "pk": 1, "fields": {"name": "на работу"}},
   {"model": "where_drive", "pk": 2, "fields": {"name": "с работы"}},
@@ -51,8 +51,8 @@
   {"model": "drivers", "pk": 1, "fields": {"driver": 2, "date": "2024-10-25"}},
   {"model": "drivers", "pk": 2, "fields": {"driver": 1, "date": "2024-10-25"}},
   {"model": "drivers", "pk": 3, "fields": {"driver": 3, "date": "2024-10-24"}},
-  {"model": "passengers", "pk": 1, "fields": {"passenger": 4, "driver": 1, "WD": 1}},
-  {"model": "passengers", "pk": 2, "fields": {"passenger": 3, "driver": 1, "WD": 1}},
-  {"model": "passengers", "pk": 3, "fields": {"passenger": 4, "driver": 1, "WD": 2}},
-  {"model": "passengers", "pk": 4, "fields": {"passenger": 3, "driver": 2, "WD": 2}}
+  {"model": "passengers", "pk": 1, "fields": {"order": 1, "passenger": 4, "driver": 1, "WD": 1}},
+  {"model": "passengers", "pk": 2, "fields": {"order": 2, "passenger": 3, "driver": 1, "WD": 1}},
+  {"model": "passengers", "pk": 3, "fields": {"order": 1, "passenger": 4, "driver": 1, "WD": 2}},
+  {"model": "passengers", "pk": 4, "fields": {"order": 1, "passenger": 3, "driver": 2, "WD": 2}}
 ]

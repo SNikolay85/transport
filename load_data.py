@@ -70,6 +70,7 @@ def load_db(data_trans):
             session.commit()
         elif record['model'] == 'passengers':
             passenger = Passengers(id_passenger=record['pk'],
+                                   order=record['fields']['order'],
                                    passenger=record['fields']['passenger'],
                                    driver=record['fields']['driver'],
                                    id_where_drive=record['fields']['WD'])

@@ -12,6 +12,26 @@ Session = sessionmaker(bind=engine)
 
 session = Session()
 
+def distance(trip):
+    id_trip = []
+    for i in range(len(trip)-1):
+        a, b = trip[i], trip[i+1]
+        q4_1 = session.query(Route).filter(Route.id_start_route == a, Route.id_finish_route == b).first()
+        q4_2 = session.query(Route).filter(Route.id_start_route == b, Route.id_finish_route == a).first()
+        if q4_1 is None:
+            id_trip.append(q4_2.id_route)
+        else:
+            id_trip.append(q4_1.id_route)
+    return id_trip
+
+
+def sum_route(distance):
+    route_all = 0
+    for i in distance:
+        q5 = session.query(Route).filter(Route.id_route == i).first()
+        route_all += q5.distance
+    return route_all
+
 '''
 показать расстояние, которое проехал определенный водитель за определенное число
 25.10.2024
@@ -19,7 +39,7 @@ session = Session()
 name_driver = 'Урдин'
 date_trip = '2024-10-25'
 factory = (session.query(Point).filter(Point.name_point == 'Завод').first()).id_point
-print(factory)
+print(f'{factory} - id завода')
 trip_forward = []
 trip_away = []
 
@@ -53,18 +73,10 @@ for i in pas_away:
 trip_away.append(q1.id_point)
 trip_away.insert(0, factory)
 print(f'{trip_away} - список id точек на маршруте с работы')
-# drivers = {i.id_driver: 0 for i in q1}
-# q2 = session.query(Passengers).all()
-# for i in q2:
-#     drivers[i.driver] = i.id_passenger
-# for i in q1:
-#     drivers[i.id_driver] = 0
 
+print(sum_route(distance(trip_forward)))
+print(sum_route(distance(trip_away)))
 
-
-#drivers = [i.id_driver for i in q1]
-# print(drivers)
-#
 # subq = session.query(Drivers).filter(Drivers.date == '2024-10-25').subquery()
 # subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subquery()
 # res = session.query(Point).join(subq1, Point.id_point == subq1.c.id_point).all()
@@ -86,4 +98,4 @@ print(f'{trip_away} - список id точек на маршруте с раб
 #                   Car.name_car).join(Point).join(Position).join(Car).all()#.join(Car.people).all()
 
 
-session.close()
+#session.close()

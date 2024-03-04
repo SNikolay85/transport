@@ -74,6 +74,15 @@ trip_away.append(q1.id_point)
 trip_away.insert(0, factory)
 print(f'{trip_away} - список id точек на маршруте с работы')
 
+
+# qw = session.query(Point.name_point).filter(Point.id_point == 12).all()
+# print(qw)
+route = []
+for i in trip_forward:
+    qw = session.query(Point.name_point).filter(Point.id_point == i).first()
+    route.append(qw.name_point)
+
+print(route)
 print(sum_route(distance(trip_forward)))
 print(sum_route(distance(trip_away)))
 

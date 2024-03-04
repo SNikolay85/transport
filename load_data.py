@@ -47,14 +47,16 @@ def load_db(data_trans):
             session.add(position)
             session.commit()
         elif record['model'] == 'people':
+            driving_licence = record['fields'].setdefault('driving_licence', None)
+            car = record['fields'].setdefault('id_car', None)
             people = People(id_people=record['pk'],
                             first_name=record['fields']['first_name'],
                             last_name=record['fields']['last_name'],
                             patronymic=record['fields']['patronymic'],
                             id_point=record['fields']['id_point'],
                             id_position=record['fields']['id_position'],
-                            driving_licence=record['fields']['driving_licence'],
-                            id_car=record['fields']['id_car'])
+                            driving_licence=driving_licence,
+                            id_car=car)
             session.add(people)
             session.commit()
         elif record['model'] == 'where_drive':

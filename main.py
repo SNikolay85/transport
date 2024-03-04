@@ -36,8 +36,8 @@ def sum_route(distance):
 показать расстояние, которое проехал определенный водитель за определенное число
 25.10.2024
 '''
-name_driver = 'Урдин'
-date_trip = '2024-10-25'
+name_driver = 'Спешилов'
+date_trip = '2024-02-01'
 factory = (session.query(Point).filter(Point.name_point == 'Завод').first()).id_point
 print(f'{factory} - id завода')
 trip_forward = []
@@ -72,6 +72,8 @@ for i in pas_away:
     trip_away.append(session.query(People).filter(People.id_people == i).first().id_point)
 trip_away.append(q1.id_point)
 trip_away.insert(0, factory)
+
+
 print(f'{trip_away} - список id точек на маршруте с работы')
 
 
@@ -84,7 +86,8 @@ for i in trip_forward:
 
 print(route)
 print(sum_route(distance(trip_forward)))
-print(sum_route(distance(trip_away)))
+print(trip_away)
+#print(sum_route(distance(trip_away)))
 
 # subq = session.query(Drivers).filter(Drivers.date == '2024-10-25').subquery()
 # subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subquery()

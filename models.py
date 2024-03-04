@@ -108,8 +108,8 @@ class People(Base):
     patronymic = sq.Column(sq.String(length=40))
     id_point = sq.Column(sq.Integer, sq.ForeignKey('point.id_point'), nullable=False)
     id_position = sq.Column(sq.Integer, sq.ForeignKey('position.id_position'), nullable=False)
-    driving_licence = sq.Column(sq.String(length=30), unique=True, nullable=True)
-    id_car = sq.Column(sq.Integer, sq.ForeignKey('car.id_car'), unique=True, nullable=True)
+    driving_licence = sq.Column(sq.String(length=30), unique=True, default=None)
+    id_car = sq.Column(sq.Integer, sq.ForeignKey('car.id_car'), unique=True, default=None)
 
     point = relationship(Point, backref='people')
     position = relationship(Position, backref='people')

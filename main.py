@@ -12,82 +12,101 @@ Session = sessionmaker(bind=engine)
 
 session = Session()
 
-def distance(trip):
+def list_id_routes(trip):
     id_trip = []
     for i in range(len(trip)-1):
         a, b = trip[i], trip[i+1]
-        q4_1 = session.query(Route).filter(Route.id_start_route == a, Route.id_finish_route == b).first()
-        q4_2 = session.query(Route).filter(Route.id_start_route == b, Route.id_finish_route == a).first()
-        if q4_1 is None:
-            id_trip.append(q4_2.id_route)
+        one_way = session.query(Route).filter(Route.id_start_route == int(a), Route.id_finish_route == int(b)).first()
+        other_way = session.query(Route).filter(Route.id_start_route == int(b), Route.id_finish_route == int(a)).first()
+        if one_way is None:
+            id_trip.append(other_way.id_route)
         else:
-            id_trip.append(q4_1.id_route)
+            id_trip.append(one_way.id_route)
     return id_trip
 
 
-def sum_route(distance):
+def distance_route(list_route):
     route_all = 0
-    for i in distance:
-        q5 = session.query(Route).filter(Route.id_route == i).first()
-        route_all += q5.distance
+    for i in list_route:
+        route_all += session.query(Route).filter(Route.id_route == int(i)).first().distance
     return route_all
 
-'''
-показать расстояние, которое проехал определенный водитель за определенное число
-25.10.2024
-'''
+def map_route(list_point):
+    route = []
+    for i in list_point:
+        title_point = session.query(Point.name_point).filter(Point.id_point == int(i)).first()
+        route.append(title_point.name_point)
+    return route
+
+
+def sum_cost(list_passenger):
+    cost = []
+    temp = 0
+    for i in list_passenger:
+        passenger_point = session.query(People.id_point).filter(People.id_people == int(i)).first()
+        if passenger_point.id_point == (session.query(People).filter(People.id_people == int(person_id.id_people)).first()).id_point:
+            temp += 1
+        else:
+            cost_check_in = session.query(Point.cost).filter(Point.id_point == int(passenger_point.id_point)).first()
+            cost.append(cost_check_in.cost)
+    if temp >= 1:
+        cost.append(50)
+    return sum(cost)
+
+
 name_driver = 'Спешилов'
-date_trip = '2024-02-01'
+date_trip = '2024-03-05'
 factory = (session.query(Point).filter(Point.name_point == 'Завод').first()).id_point
-print(f'{factory} - id завода')
+
 trip_forward = []
 trip_away = []
 
-q1 = (session.query(People).
+'''id работника'''
+person_id = (session.query(People).
       filter(People.last_name == name_driver).
       first())
-print(f'{q1.id_people} - id человека по фамилии Урдин')
-trip_forward.append(q1.id_point)
-q2 = (session.query(Drivers).
-      filter(Drivers.date == date_trip, Drivers.driver == q1.id_people).
+'''id работника в качестве водителя'''
+driver_id = (session.query(Drivers).
+      filter(Drivers.date == date_trip, Drivers.driver == int(person_id.id_people)).
       first())
-print(f'{q2.id_driver} - id человека в качестве водителя')
-q3_forward = (session.query(Passengers).
-              filter(Passengers.driver == q2.id_driver, Passengers.id_where_drive == 1).
+
+'''поиск пассажиров на работу за определенную дату c указанным водителем'''
+passenger_forward = (session.query(Passengers).
+              filter(Passengers.driver == int(driver_id.id_driver), Passengers.id_where_drive == 1).
               order_by(Passengers.order).
               all())
-pas_forward = [i.passenger for i in q3_forward]
-print(f'{pas_forward} - список id людей на работу')
-q3_away = (session.query(Passengers).
-           filter(Passengers.driver == q2.id_driver, Passengers.id_where_drive == 2).
+list_passenger_forward = [i.passenger for i in passenger_forward]
+
+'''поиск пассажиров с работы за определенную дату c указанным водителем'''
+passenger_away = (session.query(Passengers).
+           filter(Passengers.driver == int(driver_id.id_driver), Passengers.id_where_drive == 2).
            order_by(Passengers.order).
            all())
-pas_away = [i.passenger for i in q3_away]
-print(f'{pas_away} - список id людей с работы')
-for i in pas_forward:
-    trip_forward.append(session.query(People).filter(People.id_people == i).first().id_point)
+list_passenger_away = [i.passenger for i in passenger_away]
+
+'''построение маршрута на работу'''
+trip_forward.append(person_id.id_point)
+for i in list_passenger_forward:
+    trip_forward.append(session.query(People).filter(People.id_people == int(i)).first().id_point)
 trip_forward.append(factory)
-print(f'{trip_forward} - список id точек на маршруте на работу')
-for i in pas_away:
-    trip_away.append(session.query(People).filter(People.id_people == i).first().id_point)
-trip_away.append(q1.id_point)
+trip_forward = list(dict.fromkeys(trip_forward)) # удаление дублей
+
+'''построение маршрута с работы'''
+for i in list_passenger_away:
+    trip_away.append(session.query(People).filter(People.id_people == int(i)).first().id_point)
+trip_away.append(person_id.id_point)
 trip_away.insert(0, factory)
+trip_away = list(dict.fromkeys(trip_away)) # удаление дублей
 
 
-print(f'{trip_away} - список id точек на маршруте с работы')
 
 
-# qw = session.query(Point.name_point).filter(Point.id_point == 12).all()
-# print(qw)
-route = []
-for i in trip_forward:
-    qw = session.query(Point.name_point).filter(Point.id_point == i).first()
-    route.append(qw.name_point)
-
-print(route)
-print(sum_route(distance(trip_forward)))
-print(trip_away)
-#print(sum_route(distance(trip_away)))
+print(sum_cost(list_passenger_forward))
+print(sum_cost(list_passenger_away))
+print(map_route(trip_forward))
+print(distance_route(list_id_routes(trip_forward)))
+print(map_route(trip_away))
+print(distance_route(list_id_routes(trip_away)))
 
 # subq = session.query(Drivers).filter(Drivers.date == '2024-10-25').subquery()
 # subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subquery()
@@ -110,4 +129,4 @@ print(trip_away)
 #                   Car.name_car).join(Point).join(Position).join(Car).all()#.join(Car.people).all()
 
 
-#session.close()
+session.close()

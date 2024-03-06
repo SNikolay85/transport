@@ -53,9 +53,13 @@ def sum_cost(list_passenger):
         cost.append(50)
     return sum(cost)
 
+def person_worker(last_name):
+    return (session.query(People).
+            filter(People.last_name == str(last_name)).
+            first()).id_people
 
 name_driver = 'Спешилов'
-date_trip = '2024-03-05'
+date_trip = '2024-03-01'
 factory = (session.query(Point).filter(Point.name_point == 'Завод').first()).id_point
 
 trip_forward = []
@@ -98,8 +102,49 @@ trip_away.append(person_id.id_point)
 trip_away.insert(0, factory)
 trip_away = list(dict.fromkeys(trip_away)) # удаление дублей
 
+'''получение списка фамилий работников из БД'''
+person = session.query(People.last_name).all()
+
+'''пример получения данных от web-service'''
+record = {
+    'id_driver': 21, 'date': '2024-03-01', 'driver': 'Спешилов', 'passengers':
+    [
+        {'id_pas': 30, 'direction': 1, 'order': 1, 'last_name': 'Чечебейкина'},
+        {'id_pas': 31, 'direction': 1, 'order': 2, 'last_name': 'Сидоренкин'},
+        {'id_pas': 32, 'direction': 2, 'order': 1, 'last_name': 'Чечебейкина'},
+        {'id_pas': 33, 'direction': 2, 'order': 2, 'last_name': 'Сидоренкин'}
+    ]
+}
+
+# def add_person(data):
+#     people = People(id_people=record['pk'],
+#                     first_name=record['fields']['first_name'],
+#                     last_name=record['fields']['last_name'],
+#                     patronymic=record['fields']['patronymic'],
+#                     id_point=record['fields']['id_point'],
+#                     id_position=record['fields']['id_position'],
+#                     driving_licence=record['fields'].setdefault('driving_licence', None),
+#                     id_car=record['fields'].setdefault('id_car', None))
+#     session.add(people)
+#     session.commit()
+def add_record(record_answer):
+    driver = Drivers(id_driver=record_answer['id_driver'],
+                     driver=person_worker(record_answer['driver']),
+                     date=record_answer['date'])
+    session.add(driver)
+    session.commit()
+    for i in record_answer['passengers']:
+        passengers = Passengers(id_passenger=i['id_pas'],
+                                order=i['order'],
+                                passenger=person_worker(i['last_name']),
+                                driver=driver.id_driver,
+                                id_where_drive=i['direction'])
+        session.add(passengers)
+        session.commit()
 
 
+
+#add_record(record)
 
 print(sum_cost(list_passenger_forward))
 print(sum_cost(list_passenger_away))

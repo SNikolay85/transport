@@ -4,7 +4,7 @@ import os
 import json
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
-from models import create_tables, Point, Route, Fuel, Car, Car_Fuel, Position, People, Where_drive, Drivers, Passengers
+from app_route.models.models import create_tables, Point, Route, Fuel, Car, Car_Fuel, Position, People, Where_drive, Drivers, Passengers
 
 DSN = f'postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}'
 
@@ -81,7 +81,6 @@ def load_db(data_trans):
 
 if __name__ == '__main__':
 
-    #DSN = f'postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}'
     engine = sqlalchemy.create_engine(DSN)
 
     Session = sessionmaker(bind=engine)

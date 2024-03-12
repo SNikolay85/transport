@@ -2,7 +2,7 @@ import sqlalchemy
 
 from sqlalchemy.orm import sessionmaker
 
-from app_route.models.models import People, Point, Route, Drivers, Passengers
+from routes.models.models import People, Point, Route, Drivers, Passengers
 
 from load_data import DSN
 

@@ -13,10 +13,13 @@ class STasksAdd(BaseModel):
     name: str
     description: Optional[str] = None
 
-class STasks(BaseModel):
+
+class STasks(STasksAdd):
     id: int
 
+
 tasks = []
+
 
 @app_route.post('/tasks')
 async def add_tasks(task: Annotated[STasksAdd, Depends()]):
@@ -24,10 +27,10 @@ async def add_tasks(task: Annotated[STasksAdd, Depends()]):
     return {'ok': True}
 
 
-@app_route.get('/tasks')
-def get_tasks():
-    task = STasksAdd(name="first task")
-    return task
+# @app_route.get('/tasks')
+# def get_tasks():
+#     task = STasks(id=1, name="first task")
+#     return task
 
 
 # class Users(BaseModel):

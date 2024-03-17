@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from tripes.database import delete_tables, create_tables
-from tripes.router import router as tasks_router
+from trips.database import delete_tables, create_tables
+from trips.router import router as tasks_router
 
 
 @asynccontextmanager
@@ -33,7 +33,7 @@ app_route.include_router(tasks_router)
 #     age: int
 #     is_subscribed: bool
 #
-# @tripes.post('/create_user')
+# @trips.post('/create_user')
 # async def create(user: Users):
 #     return {
 #         "name": user.name,
@@ -42,7 +42,7 @@ app_route.include_router(tasks_router)
 #         "is_subscribed": user.is_subscribed
 #     }
 
-# @tripes.get('/product/{product_id}')
+# @trips.get('/product/{product_id}')
 # async def search_user(product_id: int):
 #     for k, i in enumerate(sample_products):
 #         if product_id == i['product_id']:

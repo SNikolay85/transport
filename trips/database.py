@@ -18,13 +18,13 @@ Base = declarative_base()
 class TaskOrm(Base):
     __tablename__ = 'tasks'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    description: Mapped[Optional[str]]
+    # id: Mapped[int] = mapped_column(primary_key=True)
+    # name: Mapped[str]
+    # description: Mapped[Optional[str]]
 
-    # id = Column(Integer, primary_key=True)
-    # name = Column(String(length=100))
-    # description = Column(String(length=255), nullable=True, default=None)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(length=100))
+    description = Column(String(length=255), nullable=True, default=None)
 
 
 async def delete_tables():

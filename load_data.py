@@ -4,9 +4,10 @@ import os
 import json
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
-from tripes.models.models import create_tables, Point, Route, Fuel, Car, Car_Fuel, Position, People, Where_drive, Drivers, Passengers
+from trips.models import create_tables, Point, Route, Fuel, Car, CarFuel, Position, People, WhereDrive, Drivers, Passengers
 
 DSN = f'postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}'
+
 
 def load_db(data_trans):
     for record in data_trans:
@@ -36,7 +37,7 @@ def load_db(data_trans):
             session.add(car)
             session.commit()
         elif record['model'] == 'car_fuel':
-            car_fuel = Car_Fuel(id_car_fuel=record['pk'],
+            car_fuel = CarFuel(id_car_fuel=record['pk'],
                                 id_car=record['fields']['car'],
                                 id_fuel=record['fields']['fuel'])
             session.add(car_fuel)
@@ -58,7 +59,7 @@ def load_db(data_trans):
             session.add(people)
             session.commit()
         elif record['model'] == 'where_drive':
-            where_drive = Where_drive(id_wd=record['pk'],
+            where_drive = WhereDrive(id_wd=record['pk'],
                                       name_wd=record['fields']['name'])
             session.add(where_drive)
             session.commit()

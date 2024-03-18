@@ -7,16 +7,18 @@ from trips.models import delete_tables, create_tables
 from trips.router import router as trips_router
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await delete_tables()
-    print('База очищена')
-    await create_tables()
-    print('База создана заново')
-    yield
-    print('Выключение')
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     await delete_tables()
+#     print('База очищена')
+#     await create_tables()
+#     print('База создана заново')
+#     yield
+#     print('Выключение')
 
-app_route = FastAPI(lifespan=lifespan)
+
+# app_route = FastAPI(lifespan=lifespan)
+app_route = FastAPI()
 app_route.include_router(trips_router)
 
 # if __name__ == '__main__':

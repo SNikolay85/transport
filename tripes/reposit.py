@@ -23,3 +23,5 @@ class TaskRepository:
             result = await session.execute(query)
             task_models = result.scalars().all()
             return task_models
+
+

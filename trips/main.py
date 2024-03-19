@@ -17,7 +17,7 @@ from trips.router import router as trips_router
 #     print('Выключение')
 
 
-# app_route = FastAPI(lifespan=lifespan)
+#app_route = FastAPI(lifespan=lifespan)
 app_route = FastAPI()
 app_route.include_router(trips_router)
 

@@ -81,7 +81,7 @@ class FullPeopleAdd(PeopleAdd):
 
 class DriverAdd(BaseModel):
     driver: int
-    date: date
+    date: str
 
 
 class FullDriverAdd(DriverAdd):

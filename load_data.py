@@ -17,7 +17,8 @@ Session = async_sessionmaker(engine, expire_on_commit=False)
 
 current = os.getcwd()
 file_name_base = 'test_data.json'
-file_name_next = 'dfile.json'
+#file_name_next = 'raze.json'
+file_name_next = 'driverfile.json'
 full_path_b = os.path.join(current, file_name_base)
 full_path_n = os.path.join(current, file_name_next)
 
@@ -93,15 +94,18 @@ async def load_db(data_trans):
                                    id_where_drive=record['fields']['WD'])
             session.add(passenger)
             await session.commit()
+    #await session.close()
     return print('Данные считаны и загружены в БД')
 
 
 if __name__ == '__main__':
-    # asyncio.run(reboot_tables())
-    # print('Таблицы пересозданы')
+    asyncio.get_event_loop().run_until_complete(reboot_tables())
+    #asyncio.run(reboot_tables())
+    print('Таблицы пересозданы')
+    #asyncio.get_event_loop().run_until_complete(load_db(data_base))
     # asyncio.run(load_db(data_base))
     # print('первый транш')
-    asyncio.run(load_db(data_next))
+    #asyncio.run(load_db(data_next))
 
     asyncio.run(session.close())
 

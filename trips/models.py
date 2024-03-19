@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
+from datetime import datetime, date
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
@@ -175,7 +175,7 @@ class Drivers(Base):
 
     id_driver = Column(Integer, primary_key=True)
     driver = Column(Integer, ForeignKey('people.id_people'), nullable=False)
-    date = Column(Date, nullable=False)
+    dates = Column(Date, nullable=False)
     created_on = Column(DateTime(), default=datetime.now)
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 

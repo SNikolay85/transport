@@ -126,7 +126,7 @@ class DataLoads:
             return {
                 "id_driver": driver.id_driver,
                 "driver": driver.driver,
-                "date": driver.date
+                "date_trip": driver.date_trip
             }
 
     @classmethod

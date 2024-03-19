@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from time import sleep
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -17,16 +18,11 @@ Session = async_sessionmaker(engine, expire_on_commit=False)
 
 current = os.getcwd()
 file_name_base = 'test_data.json'
-#file_name_next = 'raze.json'
-file_name_next = 'driverfile.json'
-full_path_b = os.path.join(current, file_name_base)
-full_path_n = os.path.join(current, file_name_next)
+full_path = os.path.join(current, file_name_base)
 
-with open(full_path_b, 'r', encoding='utf-8') as file:
+with open(full_path, 'r', encoding='utf-8') as file:
     data_base = json.load(file)
 
-with open(full_path_n, 'r', encoding='utf-8') as file:
-    data_next = json.load(file)
 
 session = Session()
 
@@ -83,8 +79,9 @@ async def load_db(data_trans):
             session.add(where_drive)
             await session.commit()
         elif record['model'] == 'drivers':
+            date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
             drivers = Drivers(driver=record['fields']['driver'],
-                              date=record['fields']['date'])
+                              date_trip=date_format)
             session.add(drivers)
             await session.commit()
         elif record['model'] == 'passengers':
@@ -94,18 +91,18 @@ async def load_db(data_trans):
                                    id_where_drive=record['fields']['WD'])
             session.add(passenger)
             await session.commit()
-    #await session.close()
+    await session.close()
     return print('Данные считаны и загружены в БД')
 
 
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(reboot_tables())
-    #asyncio.run(reboot_tables())
+    # asyncio.get_event_loop().run_until_complete(reboot_tables())
+    asyncio.run(reboot_tables())
     print('Таблицы пересозданы')
-    #asyncio.get_event_loop().run_until_complete(load_db(data_base))
-    # asyncio.run(load_db(data_base))
+    # # asyncio.get_event_loop().run_until_complete(load_db(data_base))
+    asyncio.run(load_db(data_base))
     # print('первый транш')
     #asyncio.run(load_db(data_next))
 
-    asyncio.run(session.close())
+    #asyncio.run(session.close())
 

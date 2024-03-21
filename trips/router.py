@@ -109,6 +109,12 @@ async def get_people():
     return {'peoples': peoples}
 
 
+@router.get('/people/{user_id}')
+async def get_user(user_id: int):
+    user = await DataGet.find_user(user_id)
+    return {'user': user}
+
+
 @router.post('/driver')
 async def add_driver(driver: Annotated[DriverAdd, Depends()]):
     driver_data = await DataLoads.add_driver(driver)

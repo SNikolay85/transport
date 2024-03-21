@@ -154,6 +154,7 @@ class DataGet:
             point_models = result.scalars().all()
             return point_models
 
+
     @classmethod
     async def find_all_route(cls):
         async with Session() as session:
@@ -209,6 +210,16 @@ class DataGet:
             result = await session.execute(query)
             people_models = result.scalars().all()
             return people_models
+
+
+    @classmethod
+    async def find_user(cls, user_id: int):
+        async with Session() as session:
+            query = select(People).filter(People.id_people == user_id)
+            result = await session.execute(query)
+            user_models = result.scalars().all()
+            return user_models
+
 
     @classmethod
     async def find_all_driver(cls):

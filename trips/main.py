@@ -18,7 +18,7 @@ from trips.router import router as trips_router
 
 
 #app_route = FastAPI(lifespan=lifespan)
-app_route = FastAPI()
+app_route = FastAPI(title='Transport')
 app_route.include_router(trips_router)
 
 # if __name__ == '__main__':

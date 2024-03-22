@@ -8,7 +8,7 @@ import json
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
 from trips.models import Point, Route, Fuel, Car, CarFuel, \
-    Position, People, WhereDrive, Drivers, Passengers, create_tables, delete_tables
+    Position, People, WhereDrive, Driver, Passenger, create_tables, delete_tables
 
 PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
@@ -80,12 +80,12 @@ async def load_db(data_trans):
             await session.commit()
         elif record['model'] == 'drivers':
             date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
-            drivers = Drivers(driver=record['fields']['driver'],
+            drivers = Driver(driver=record['fields']['driver'],
                               date_trip=date_format)
             session.add(drivers)
             await session.commit()
         elif record['model'] == 'passengers':
-            passenger = Passengers(order=record['fields']['order'],
+            passenger = Passenger(order=record['fields']['order'],
                                    passenger=record['fields']['passenger'],
                                    driver=record['fields']['driver'],
                                    id_where_drive=record['fields']['WD'])

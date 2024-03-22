@@ -5,11 +5,9 @@ from datetime import datetime
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
-
 PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
-
-engine = create_async_engine(PG_DSN)
+engine = create_async_engine(PG_DSN, echo=True)
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -50,7 +48,7 @@ class Route(Base):
         return f'Route {self.id_route}: ' \
                f'({self.id_start_route}, ' \
                f'{self.id_finish_route}, ' \
-               f'{self.distance}, '  \
+               f'{self.distance}, ' \
                f'{self.created_on}, ' \
                f'{self.updated_on})'
 
@@ -65,7 +63,7 @@ class Fuel(Base):
 
     def __str__(self):
         return f'Fuel {self.id_fuel}: ' \
-               f'{self.name_fuel}, '  \
+               f'{self.name_fuel}, ' \
                f'{self.created_on}, ' \
                f'{self.updated_on})'
 
@@ -134,9 +132,9 @@ class WhereDrive(Base):
 
     def __str__(self):
         return f'WhereDrive {self.id_wd}: ' \
-            f'({self.name_wd}, ' \
-            f'{self.created_on}, ' \
-            f'{self.updated_on})'
+               f'({self.name_wd}, ' \
+               f'{self.created_on}, ' \
+               f'{self.updated_on})'
 
 
 class People(Base):
@@ -170,8 +168,8 @@ class People(Base):
                f'{self.updated_on})'
 
 
-class Drivers(Base):
-    __tablename__ = 'drivers'
+class Driver(Base):
+    __tablename__ = 'driver'
 
     id_driver = Column(Integer, primary_key=True)
     driver = Column(Integer, ForeignKey('people.id_people'), nullable=False)
@@ -183,35 +181,35 @@ class Drivers(Base):
 
     def __str__(self):
         return f'Drivers {self.id_driver}: ' \
-            f'({self.driver}, ' \
-            f'{self.date_trip}, ' \
-            f'{self.created_on}, ' \
-            f'{self.updated_on})'
+               f'({self.driver}, ' \
+               f'{self.date_trip}, ' \
+               f'{self.created_on}, ' \
+               f'{self.updated_on})'
 
 
-class Passengers(Base):
-    __tablename__ = 'passengers'
+class Passenger(Base):
+    __tablename__ = 'passenger'
 
     id_passenger = Column(Integer, primary_key=True)
     order = Column(Integer, nullable=False)
     passenger = Column(Integer, ForeignKey('people.id_people'), nullable=False)
-    driver = Column(Integer, ForeignKey('drivers.id_driver'), nullable=False)
+    driver = Column(Integer, ForeignKey('driver.id_driver'), nullable=False)
     id_where_drive = Column(Integer, ForeignKey('where_drive.id_wd'), nullable=False)
     created_on = Column(DateTime(), default=datetime.now)
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 
-    people = relationship(People, backref='passengers')
-    drivers = relationship(Drivers, backref='passengers')
-    where_drive = relationship(WhereDrive, backref='passengers')
+    people = relationship(People, backref='passenger')
+    drivers = relationship(Driver, backref='passenger')
+    where_drive = relationship(WhereDrive, backref='passenger')
 
     def __str__(self):
         return f'Passengers {self.id_passenger}: ' \
-            f'({self.order}, ' \
-            f'{self.passenger}, ' \
-            f'{self.driver}, ' \
-            f'{self.id_where_drive}, ' \
-            f'{self.created_on}, ' \
-            f'{self.updated_on})'
+               f'({self.order}, ' \
+               f'{self.passenger}, ' \
+               f'{self.driver}, ' \
+               f'{self.id_where_drive}, ' \
+               f'{self.created_on}, ' \
+               f'{self.updated_on})'
 
 
 async def delete_tables():

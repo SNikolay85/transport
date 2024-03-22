@@ -2,11 +2,11 @@ import sqlalchemy
 
 from sqlalchemy.orm import sessionmaker
 
-from trips.models import People, Point, Route, Drivers, Passengers
+from trips.models import People, Point, Route, Driver, Passenger
 
-from load_data import DSN
+from load_data import PG_DSN
 
-engine = sqlalchemy.create_engine(DSN)
+engine = sqlalchemy.create_engine(PG_DSN)
 
 Session = sessionmaker(bind=engine)
 
@@ -70,21 +70,21 @@ person_id = (session.query(People).
       filter(People.last_name == name_driver).
       first())
 '''id работника в качестве водителя'''
-driver_id = (session.query(Drivers).
-      filter(Drivers.date == date_trip, Drivers.driver == int(person_id.id_people)).
+driver_id = (session.query(Driver).
+      filter(Driver.date == date_trip, Driver.driver == int(person_id.id_people)).
       first())
 
 '''поиск пассажиров на работу за определенную дату c указанным водителем'''
-passenger_forward = (session.query(Passengers).
-              filter(Passengers.driver == int(driver_id.id_driver), Passengers.id_where_drive == 1).
-              order_by(Passengers.order).
+passenger_forward = (session.query(Passenger).
+              filter(Passenger.driver == int(driver_id.id_driver), Passenger.id_where_drive == 1).
+              order_by(Passenger.order).
               all())
 list_passenger_forward = [i.passenger for i in passenger_forward]
 
 '''поиск пассажиров с работы за определенную дату c указанным водителем'''
-passenger_away = (session.query(Passengers).
-           filter(Passengers.driver == int(driver_id.id_driver), Passengers.id_where_drive == 2).
-           order_by(Passengers.order).
+passenger_away = (session.query(Passenger).
+           filter(Passenger.driver == int(driver_id.id_driver), Passenger.id_where_drive == 2).
+           order_by(Passenger.order).
            all())
 list_passenger_away = [i.passenger for i in passenger_away]
 
@@ -128,13 +128,13 @@ record = {
 #     session.add(people)
 #     session.commit()
 def add_record(record_answer):
-    driver = Drivers(id_driver=record_answer['id_driver'],
+    driver = Driver(id_driver=record_answer['id_driver'],
                      driver=person_worker(record_answer['driver']),
                      date=record_answer['date'])
     session.add(driver)
     session.commit()
     for i in record_answer['passengers']:
-        passengers = Passengers(id_passenger=i['id_pas'],
+        passengers = Passenger(id_passenger=i['id_pas'],
                                 order=i['order'],
                                 passenger=person_worker(i['last_name']),
                                 driver=driver.id_driver,

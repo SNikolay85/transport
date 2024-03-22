@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
-from trips.models import WhereDrive, People, Drivers, Passengers
+from trips.models import WhereDrive, People, Driver, Passenger
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd
 from trips.schema import PositionAdd, WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd
 import asyncio
@@ -119,7 +119,7 @@ class DataLoads:
     @classmethod
     async def add_driver(cls, data: DriverAdd) -> dict:
         async with Session() as session:
-            driver = Drivers(**(data.model_dump()))
+            driver = Driver(**(data.model_dump()))
             session.add(driver)
             await session.flush()
             await session.commit()
@@ -132,7 +132,7 @@ class DataLoads:
     @classmethod
     async def add_passenger(cls, data: PassengerAdd) -> dict:
         async with Session() as session:
-            passenqer = Passengers(**(data.model_dump()))
+            passenqer = Passenger(**(data.model_dump()))
             session.add(passenqer)
             await session.flush()
             await session.commit()
@@ -153,7 +153,6 @@ class DataGet:
             result = await session.execute(query)
             point_models = result.scalars().all()
             return point_models
-
 
     @classmethod
     async def find_all_route(cls):
@@ -211,7 +210,6 @@ class DataGet:
             people_models = result.scalars().all()
             return people_models
 
-
     @classmethod
     async def find_user(cls, user_id: int):
         async with Session() as session:
@@ -220,11 +218,10 @@ class DataGet:
             user_models = result.scalars().all()
             return user_models
 
-
     @classmethod
     async def find_all_driver(cls):
         async with Session() as session:
-            query = select(Drivers)
+            query = select(Driver)
             result = await session.execute(query)
             drivers_models = result.scalars().all()
             return drivers_models
@@ -232,7 +229,7 @@ class DataGet:
     @classmethod
     async def find_all_passengers(cls):
         async with Session() as session:
-            query = select(Passengers)
+            query = select(Passenger)
             result = await session.execute(query)
             passenger_models = result.scalars().all()
             return passenger_models

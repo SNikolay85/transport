@@ -13,8 +13,8 @@ class FullPointAdd(PointAdd):
 
 
 class RouteAdd(BaseModel):
-    id_start_route: int
-    id_finish_route: int
+    id_start_point: int
+    id_finish_point: int
     distance: int
 
 
@@ -34,6 +34,7 @@ class CarAdd(BaseModel):
     name_car: str
     number_of_car: str
     average_consumption: int
+    id_people: int
 
 
 class FullCarAdd(CarAdd):
@@ -72,7 +73,6 @@ class PeopleAdd(BaseModel):
     id_point: int
     id_position: int
     driving_licence: str
-    id_car: int
 
 
 class FullPeopleAdd(PeopleAdd):
@@ -80,7 +80,7 @@ class FullPeopleAdd(PeopleAdd):
 
 
 class DriverAdd(BaseModel):
-    driver: int
+    id_people: int
     date_trip: date
 
 
@@ -90,8 +90,8 @@ class FullDriverAdd(DriverAdd):
 
 class PassengerAdd(BaseModel):
     order: int
-    passenger: int
-    driver: int
+    id_people: int
+    id_driver: int
     id_where_drive: int
 
 

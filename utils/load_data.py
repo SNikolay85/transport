@@ -1,23 +1,15 @@
 import asyncio
 from datetime import datetime
-from time import sleep
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 import os
 import json
-from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
-from trips.models import Point, Route, Fuel, Car, CarFuel, \
-    Position, People, WhereDrive, Driver, Passenger, create_tables, delete_tables
+from trips.models import Point, Route, Fuel, Car, CarFuel, Position, People, WhereDrive, Driver, Passenger
+from trips.models import create_tables, delete_tables, Session
 
-PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-
-engine = create_async_engine(PG_DSN)
-
-Session = async_sessionmaker(engine, expire_on_commit=False)
 
 current = os.getcwd()
-file_name_base = 'test_data.json'
+file_name_base = '../test_data.json'
 full_path = os.path.join(current, file_name_base)
 
 with open(full_path, 'r', encoding='utf-8') as file:
@@ -40,8 +32,8 @@ async def load_db(data_trans):
             session.add(point)
             await session.commit()
         elif record['model'] == 'route':
-            route = Route(id_start_route=record['fields']['start'],
-                          id_finish_route=record['fields']['finish'],
+            route = Route(id_start_point=record['fields']['start'],
+                          id_finish_point=record['fields']['finish'],
                           distance=record['fields']['distance'])
             session.add(route)
             await session.commit()
@@ -52,7 +44,8 @@ async def load_db(data_trans):
         elif record['model'] == 'car':
             car = Car(name_car=record['fields']['name'],
                       number_of_car=record['fields']['number'],
-                      average_consumption=record['fields']['average'])
+                      average_consumption=record['fields']['average'],
+                      id_people=record['fields']['people'])
             session.add(car)
             await session.commit()
         elif record['model'] == 'car_fuel':
@@ -70,8 +63,7 @@ async def load_db(data_trans):
                             patronymic=record['fields']['patronymic'],
                             id_point=record['fields']['id_point'],
                             id_position=record['fields']['id_position'],
-                            driving_licence=record['fields'].setdefault('driving_licence', None),
-                            id_car=record['fields'].setdefault('id_car', None))
+                            driving_licence=record['fields'].setdefault('driving_licence', None))
             session.add(people)
             await session.commit()
         elif record['model'] == 'where_drive':
@@ -80,18 +72,18 @@ async def load_db(data_trans):
             await session.commit()
         elif record['model'] == 'drivers':
             date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
-            drivers = Driver(driver=record['fields']['driver'],
-                              date_trip=date_format)
+            drivers = Driver(id_people=record['fields']['driver'],
+                             date_trip=date_format)
             session.add(drivers)
             await session.commit()
         elif record['model'] == 'passengers':
             passenger = Passenger(order=record['fields']['order'],
-                                   passenger=record['fields']['passenger'],
-                                   driver=record['fields']['driver'],
-                                   id_where_drive=record['fields']['WD'])
+                                  id_people=record['fields']['passenger'],
+                                  id_driver=record['fields']['driver'],
+                                  id_where_drive=record['fields']['WD'])
             session.add(passenger)
             await session.commit()
-    await session.close()
+    await asyncio.shield(session.close())
     return print('Данные считаны и загружены в БД')
 
 
@@ -102,6 +94,4 @@ if __name__ == '__main__':
     asyncio.get_event_loop().run_until_complete(load_db(data_base))
     #asyncio.run(load_db(data_base))
 
-
-    #asyncio.run(session.close())
 

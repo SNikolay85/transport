@@ -1,7 +1,12 @@
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime
-from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
+from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped
+from sqlalchemy.sql import func
+from datetime import datetime, date
+
+from typing_extensions import Annotated
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
@@ -11,205 +16,186 @@ engine = create_async_engine(PG_DSN, echo=True)
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
 
-Base = declarative_base()
+my_metadata = MetaData()
+
+intpk = Annotated[int, mapped_column(primary_key=True)]
+point_fk = Annotated[int, mapped_column(ForeignKey('point.id_point'))]
+car_fk = Annotated[int, mapped_column(ForeignKey('car.id_car'))]
+fuel_fk = Annotated[int, mapped_column(ForeignKey('fuel.id_fuel'))]
+position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position'))]
+people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people'))]
+driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver'))]
+wd_fk = Annotated[int, mapped_column(ForeignKey('where_drive.id_wd'))]
+str100 = Annotated[str, 100]
+str20 = Annotated[str, 20]
+str50 = Annotated[str, 50]
+date_trip = Annotated[date, mapped_column(Date)]
+
+created_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
+updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())]
+
+
+class Base(DeclarativeBase):
+    metadata = my_metadata
+    type_annotation_map = {
+        str100: String(100),
+        str20: String(20),
+        str50: String(50),
+    }
 
 
 class Point(Base):
     __tablename__ = 'point'
 
-    id_point = Column(Integer, primary_key=True)
-    name_point = Column(String(length=100))
-    cost = Column(Integer)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_point: Mapped[intpk]
+    name_point: Mapped[str100] = mapped_column(unique=True)
+    cost: Mapped[int]
 
-    def __str__(self):
-        return f'Point {self.id_point}: ' \
-               f'({self.name_point}, ' \
-               f'{self.cost}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    start_point: Mapped[list['Route']] = relationship(back_populates='point_start',
+                                                      foreign_keys='[Route.id_start_point]')
+    finish_point: Mapped[list['Route']] = relationship(back_populates='point_finish',
+                                                       foreign_keys='[Route.id_finish_point]')
+    peoples: Mapped[list['People']] = relationship(back_populates='point')
 
 
 class Route(Base):
     __tablename__ = 'route'
 
-    id_route = Column(Integer, primary_key=True)
-    id_start_route = Column(Integer, ForeignKey('point.id_point'), nullable=False)
-    id_finish_route = Column(Integer, ForeignKey('point.id_point'), nullable=False)
-    distance = Column(Integer)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_route: Mapped[intpk]
+    id_start_point: Mapped[point_fk]
+    id_finish_point: Mapped[point_fk]
+    distance: Mapped[int]
+    __table_args__ = (UniqueConstraint('id_start_point', 'id_finish_point', name='start_finish_uc'),)
 
-    point_start = relationship(Point, backref='start_route', foreign_keys=[id_start_route])
-    point_finish = relationship(Point, backref='finish_route', foreign_keys=[id_finish_route])
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
 
-    def __str__(self):
-        return f'Route {self.id_route}: ' \
-               f'({self.id_start_route}, ' \
-               f'{self.id_finish_route}, ' \
-               f'{self.distance}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    point_start: Mapped[Point] = relationship(back_populates='start_point', foreign_keys='[Route.id_start_point]')
+    point_finish: Mapped[Point] = relationship(back_populates='finish_point', foreign_keys='[Route.id_finish_point]')
 
 
 class Fuel(Base):
     __tablename__ = 'fuel'
 
-    id_fuel = Column(Integer, primary_key=True)
-    name_fuel = Column(String(length=20))
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_fuel: Mapped[intpk]
+    name_fuel: Mapped[str50] = mapped_column(unique=True)
 
-    def __str__(self):
-        return f'Fuel {self.id_fuel}: ' \
-               f'{self.name_fuel}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    car_fuels: Mapped[list['CarFuel']] = relationship(back_populates='fuel')
 
 
 class Car(Base):
     __tablename__ = 'car'
 
-    id_car = Column(Integer, primary_key=True)
-    name_car = Column(String(length=40))
-    number_of_car = Column(String(length=20))
-    average_consumption = Column(Integer)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_car: Mapped[intpk]
+    name_car: Mapped[str100]
+    number_of_car: Mapped[str20] = mapped_column(unique=True)
+    average_consumption: Mapped[int]
+    id_people: Mapped[people_fk]
 
-    def __str__(self):
-        return f'Car {self.id_car}: ' \
-               f'({self.name_car}, ' \
-               f'{self.number_of_car}, ' \
-               f'{self.average_consumption}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    car_fuels: Mapped[list['CarFuel']] = relationship(back_populates='car')
+    people: Mapped['People'] = relationship(back_populates='cars')
 
 
 class CarFuel(Base):
     __tablename__ = 'car_fuel'
 
-    id_car_fuel = Column(Integer, primary_key=True)
-    id_car = Column(Integer, ForeignKey('car.id_car'), nullable=False)
-    id_fuel = Column(Integer, ForeignKey('fuel.id_fuel'), nullable=False)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_car_fuel: Mapped[intpk]
+    id_car: Mapped[car_fk]
+    id_fuel: Mapped[fuel_fk]
 
-    car = relationship(Car, backref='car_fuel')
-    fuel = relationship(Fuel, backref='car_fuel')
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
 
-    def __str__(self):
-        return f'CarFuel {self.id_car_fuel}: ' \
-               f'({self.id_car}, ' \
-               f'{self.id_fuel}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    car: Mapped['Car'] = relationship(back_populates='car_fuels')
+    fuel: Mapped['Fuel'] = relationship(back_populates='car_fuels')
 
 
 class Position(Base):
     __tablename__ = 'position'
 
-    id_position = Column(Integer, primary_key=True)
-    name_position = Column(String(length=50))
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_position: Mapped[intpk]
+    name_position: Mapped[str100] = mapped_column(unique=True)
 
-    def __str__(self):
-        return f'Position {self.id_position}: ' \
-               f'({self.name_position}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    peoples: Mapped[list['People']] = relationship(back_populates='position')
 
 
 class WhereDrive(Base):
     __tablename__ = 'where_drive'
 
-    id_wd = Column(Integer, primary_key=True)
-    name_wd = Column(String(length=40))
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_wd: Mapped[intpk]
+    name_wd: Mapped[str20] = mapped_column(unique=True)
 
-    def __str__(self):
-        return f'WhereDrive {self.id_wd}: ' \
-               f'({self.name_wd}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    passengers: Mapped[list['Passenger']] = relationship(back_populates='where_drive')
 
 
 class People(Base):
     __tablename__ = 'people'
 
-    id_people = Column(Integer, primary_key=True)
-    first_name = Column(String(length=20))
-    last_name = Column(String(length=40))
-    patronymic = Column(String(length=40))
-    id_point = Column(Integer, ForeignKey('point.id_point'), nullable=False)
-    id_position = Column(Integer, ForeignKey('position.id_position'), nullable=False)
-    driving_licence = Column(String(length=30), unique=True, default=None)
-    id_car = Column(Integer, ForeignKey('car.id_car'), unique=True, default=None)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_people: Mapped[intpk]
+    first_name: Mapped[str50]
+    last_name: Mapped[str50]
+    patronymic: Mapped[str50]
+    id_point: Mapped[point_fk]
+    id_position: Mapped[position_fk]
+    driving_licence: Mapped[Optional[str50]] = mapped_column(unique=True)
+    __table_args__ = (UniqueConstraint('first_name', 'last_name', 'patronymic', 'id_point', 'id_position', name='people_uc'),)
 
-    point = relationship(Point, backref='people')
-    position = relationship(Position, backref='people')
-    car = relationship(Car, backref='people')
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
 
-    def __str__(self):
-        return f'People {self.id_people}: ' \
-               f'({self.first_name}, ' \
-               f'{self.last_name}, ' \
-               f'{self.patronymic}, ' \
-               f'{self.id_point}, ' \
-               f'{self.id_position}, ' \
-               f'{self.driving_licence}, ' \
-               f'{self.id_car}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    point: Mapped['Point'] = relationship(back_populates='peoples')
+    position: Mapped['Position'] = relationship(back_populates='peoples')
+    cars: Mapped[list['Car']] = relationship(back_populates='people')
+    driver: Mapped['Driver'] = relationship(back_populates='peoples')
+    passengers: Mapped[list['Passenger']] = relationship(back_populates='people')
 
 
 class Driver(Base):
     __tablename__ = 'driver'
 
-    id_driver = Column(Integer, primary_key=True)
-    driver = Column(Integer, ForeignKey('people.id_people'), nullable=False)
-    date_trip = Column(Date, nullable=False)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_driver: Mapped[intpk]
+    id_people: Mapped[people_fk]
+    date_trip: Mapped[date_trip]
+    __table_args__ = (UniqueConstraint('id_people', 'date_trip', name='people_date_uc'),)
 
-    people = relationship(People, backref='drivers')
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
 
-    def __str__(self):
-        return f'Drivers {self.id_driver}: ' \
-               f'({self.driver}, ' \
-               f'{self.date_trip}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    peoples: Mapped[list['People']] = relationship(back_populates='driver')
+    passengers: Mapped[list['Passenger']] = relationship(back_populates='driver')
 
 
 class Passenger(Base):
     __tablename__ = 'passenger'
 
-    id_passenger = Column(Integer, primary_key=True)
-    order = Column(Integer, nullable=False)
-    passenger = Column(Integer, ForeignKey('people.id_people'), nullable=False)
-    driver = Column(Integer, ForeignKey('driver.id_driver'), nullable=False)
-    id_where_drive = Column(Integer, ForeignKey('where_drive.id_wd'), nullable=False)
-    created_on = Column(DateTime(), default=datetime.now)
-    updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    id_passenger: Mapped[intpk]
+    order: Mapped[int]
+    id_people: Mapped[people_fk]
+    id_driver: Mapped[driver_fk]
+    id_where_drive: Mapped[wd_fk]
+    __table_args__ = (UniqueConstraint('id_people', 'id_driver', 'id_where_drive', name='passenger_uc'),)
 
-    people = relationship(People, backref='passenger')
-    drivers = relationship(Driver, backref='passenger')
-    where_drive = relationship(WhereDrive, backref='passenger')
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
 
-    def __str__(self):
-        return f'Passengers {self.id_passenger}: ' \
-               f'({self.order}, ' \
-               f'{self.passenger}, ' \
-               f'{self.driver}, ' \
-               f'{self.id_where_drive}, ' \
-               f'{self.created_on}, ' \
-               f'{self.updated_on})'
+    people: Mapped['People'] = relationship(back_populates='passengers')
+    driver: Mapped['Driver'] = relationship(back_populates='passengers')
+    where_drive: Mapped['WhereDrive'] = relationship(back_populates='passengers')
 
 
 async def delete_tables():
@@ -220,7 +206,3 @@ async def delete_tables():
 async def create_tables():
     async with engine.begin() as connect:
         await connect.run_sync(Base.metadata.create_all)
-
-# def create_tables(engine):
-#     Base.metadata.drop_all(engine)
-#     Base.metadata.create_all(engine)

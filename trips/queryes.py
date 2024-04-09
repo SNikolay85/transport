@@ -2,9 +2,9 @@ import sqlalchemy
 
 from sqlalchemy.orm import sessionmaker
 
-from trips.models import People, Point, Route, Driver, Passenger
+from trips.models_temp import People, Point, Route, Driver, Passenger
 
-from load_data import PG_DSN
+from utils.load_data import PG_DSN
 
 engine = sqlalchemy.create_engine(PG_DSN)
 

@@ -30,8 +30,8 @@ class DataLoads:
             await session.commit()
             return {
                 "id_route": route.id_route,
-                "id_start_route": route.id_start_route,
-                "id_finish_route": route.id_finish_route,
+                "id_start_point": route.id_start_point,
+                "id_finish_point": route.id_finish_point,
                 "distance": route.distance
             }
 
@@ -58,7 +58,8 @@ class DataLoads:
                 "id_car": car.id_car,
                 "name_car": car.name_car,
                 "number_of_car": car.number_of_car,
-                "average_consumption": car.average_consumption
+                "average_consumption": car.average_consumption,
+                "id_people": car.id_people
             }
 
     @classmethod
@@ -112,8 +113,7 @@ class DataLoads:
                 "patronymic": people.patronymic,
                 "id_point": people.id_point,
                 "id_position": people.id_position,
-                "driving_licence": people.driving_licence,
-                "id_car": people.id_car
+                "driving_licence": people.driving_licence
             }
 
     @classmethod
@@ -125,7 +125,7 @@ class DataLoads:
             await session.commit()
             return {
                 "id_driver": driver.id_driver,
-                "driver": driver.driver,
+                "id_people": driver.id_people,
                 "date_trip": driver.date_trip
             }
 
@@ -139,8 +139,8 @@ class DataLoads:
             return {
                 "id_passenger": passenqer.id_passenger,
                 "order": passenqer.order,
-                "passenger": passenqer.passenger,
-                "driver": passenqer.driver,
+                "id_people": passenqer.id_people,
+                "id_driver": passenqer.id_driver,
                 "id_where_drive": passenqer.id_where_drive
             }
 

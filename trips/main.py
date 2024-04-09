@@ -3,7 +3,7 @@ import uvicorn
 
 from fastapi import FastAPI
 
-from trips.models import delete_tables, create_tables
+from trips.models_temp import delete_tables, create_tables
 from trips.router import router as trips_router
 
 

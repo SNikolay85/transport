@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 from datetime import datetime, date
 
 from typing_extensions import Annotated
+from enum import Enum
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
@@ -19,20 +20,18 @@ Session = async_sessionmaker(engine, expire_on_commit=False)
 my_metadata = MetaData()
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
-point_fk = Annotated[int, mapped_column(ForeignKey('point.id_point'))]
-car_fk = Annotated[int, mapped_column(ForeignKey('car.id_car'))]
-fuel_fk = Annotated[int, mapped_column(ForeignKey('fuel.id_fuel'))]
-position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position'))]
-people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people'))]
-driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver'))]
-wd_fk = Annotated[int, mapped_column(ForeignKey('where_drive.id_wd'))]
+point_fk = Annotated[int, mapped_column(ForeignKey('point.id_point', ondelete="CASCADE"))]
+car_fk = Annotated[int, mapped_column(ForeignKey('car.id_car', ondelete="CASCADE"))]
+position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position', ondelete="CASCADE"))]
+people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people', ondelete="CASCADE"))]
+driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver', ondelete="CASCADE"))]
 str100 = Annotated[str, 100]
 str20 = Annotated[str, 20]
 str50 = Annotated[str, 50]
 date_trip = Annotated[date, mapped_column(Date)]
 
 created_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
-updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())]
+updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now)]
 
 
 class Base(DeclarativeBase):
@@ -77,16 +76,13 @@ class Route(Base):
     point_finish: Mapped[Point] = relationship(back_populates='finish_point', foreign_keys='[Route.id_finish_point]')
 
 
-class Fuel(Base):
-    __tablename__ = 'fuel'
-
-    id_fuel: Mapped[intpk]
-    name_fuel: Mapped[str50] = mapped_column(unique=True)
-
-    created_on: Mapped[created_on]
-    updated_on: Mapped[updated_on]
-
-    car_fuels: Mapped[list['CarFuel']] = relationship(back_populates='fuel')
+class Fuel(Enum):
+    gas_92 = 'АИ-92'
+    gas_92_prem = 'АИ-92 фирменное'
+    gas_95 = 'АИ-95'
+    gas_95_prem = 'АИ-95 фирменное'
+    diesel = 'ДТ1, ДТ2'
+    diesel_prem = 'ДТ фирменное'
 
 
 class Car(Base):
@@ -110,13 +106,13 @@ class CarFuel(Base):
 
     id_car_fuel: Mapped[intpk]
     id_car: Mapped[car_fk]
-    id_fuel: Mapped[fuel_fk]
+    fuel: Mapped[Fuel]
+    __table_args__ = (UniqueConstraint('id_car', 'fuel', name='car_fuel_uc'),)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
     car: Mapped['Car'] = relationship(back_populates='car_fuels')
-    fuel: Mapped['Fuel'] = relationship(back_populates='car_fuels')
 
 
 class Position(Base):
@@ -131,16 +127,11 @@ class Position(Base):
     peoples: Mapped[list['People']] = relationship(back_populates='position')
 
 
-class WhereDrive(Base):
-    __tablename__ = 'where_drive'
-
-    id_wd: Mapped[intpk]
-    name_wd: Mapped[str20] = mapped_column(unique=True)
-
-    created_on: Mapped[created_on]
-    updated_on: Mapped[updated_on]
-
-    passengers: Mapped[list['Passenger']] = relationship(back_populates='where_drive')
+class WhereDrive(Enum):
+    to_work = 'на работу'
+    from_work = 'с работы'
+    to_city = 'в город'
+    from_city = 'из города'
 
 
 class People(Base):
@@ -187,15 +178,14 @@ class Passenger(Base):
     order: Mapped[int]
     id_people: Mapped[people_fk]
     id_driver: Mapped[driver_fk]
-    id_where_drive: Mapped[wd_fk]
-    __table_args__ = (UniqueConstraint('id_people', 'id_driver', 'id_where_drive', name='passenger_uc'),)
+    where_drive: Mapped[WhereDrive]
+    __table_args__ = (UniqueConstraint('id_people', 'id_driver', 'where_drive', name='passenger_uc'),)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
     people: Mapped['People'] = relationship(back_populates='passengers')
     driver: Mapped['Driver'] = relationship(back_populates='passengers')
-    where_drive: Mapped['WhereDrive'] = relationship(back_populates='passengers')
 
 
 async def delete_tables():

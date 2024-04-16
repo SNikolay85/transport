@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import json
 
-from trips.models import Point, Route, Fuel, Car, CarFuel, Position, People, WhereDrive, Driver, Passenger
+from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger
 from trips.models import create_tables, delete_tables, Session
 
 
@@ -37,10 +37,6 @@ async def load_db(data_trans):
                           distance=record['fields']['distance'])
             session.add(route)
             await session.commit()
-        elif record['model'] == 'fuel':
-            fuel = Fuel(name_fuel=record['fields']['name'])
-            session.add(fuel)
-            await session.commit()
         elif record['model'] == 'car':
             car = Car(name_car=record['fields']['name'],
                       number_of_car=record['fields']['number'],
@@ -50,7 +46,7 @@ async def load_db(data_trans):
             await session.commit()
         elif record['model'] == 'car_fuel':
             car_fuel = CarFuel(id_car=record['fields']['car'],
-                               id_fuel=record['fields']['fuel'])
+                               fuel=record['fields']['fuel'])
             session.add(car_fuel)
             await session.commit()
         elif record['model'] == 'position':
@@ -66,10 +62,6 @@ async def load_db(data_trans):
                             driving_licence=record['fields'].setdefault('driving_licence', None))
             session.add(people)
             await session.commit()
-        elif record['model'] == 'where_drive':
-            where_drive = WhereDrive(name_wd=record['fields']['name'])
-            session.add(where_drive)
-            await session.commit()
         elif record['model'] == 'drivers':
             date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
             drivers = Driver(id_people=record['fields']['driver'],
@@ -80,7 +72,7 @@ async def load_db(data_trans):
             passenger = Passenger(order=record['fields']['order'],
                                   id_people=record['fields']['passenger'],
                                   id_driver=record['fields']['driver'],
-                                  id_where_drive=record['fields']['WD'])
+                                  where_drive=record['fields']['WD'])
             session.add(passenger)
             await session.commit()
     await asyncio.shield(session.close())
@@ -88,10 +80,10 @@ async def load_db(data_trans):
 
 
 if __name__ == '__main__':
-    asyncio.get_event_loop().run_until_complete(reboot_tables())
-    #asyncio.run(reboot_tables())
-    print('Таблицы пересозданы')
+    # asyncio.get_event_loop().run_until_complete(reboot_tables())
+    # #asyncio.run(reboot_tables())
+    # print('Таблицы пересозданы')
     asyncio.get_event_loop().run_until_complete(load_db(data_base))
-    #asyncio.run(load_db(data_base))
+    # asyncio.run(load_db(data_base))
 
 

@@ -6,6 +6,7 @@ argon2-cffi-bindings==21.2.0
 async-timeout==4.0.3
 asyncpg==0.29.0
 bcrypt==4.1.2
+black==24.4.0
 cffi==1.16.0
 click==8.1.7
 cryptography==42.0.5

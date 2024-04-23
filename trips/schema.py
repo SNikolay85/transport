@@ -2,13 +2,15 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel
 
+from trips.models import Fuel, WhereDrive
+
 
 class PointAdd(BaseModel):
     name_point: str
     cost: int
 
 
-class FullPointAdd(PointAdd):
+class FullPoint(PointAdd):
     id_point: int
 
 
@@ -18,16 +20,8 @@ class RouteAdd(BaseModel):
     distance: int
 
 
-class FullRouteAdd(RouteAdd):
+class FullRoute(RouteAdd):
     id_route: int
-
-
-class FuelAdd(BaseModel):
-    name_fuel: str
-
-
-class FullFuelAdd(FuelAdd):
-    id_fuel: int
 
 
 class CarAdd(BaseModel):
@@ -37,16 +31,16 @@ class CarAdd(BaseModel):
     id_people: int
 
 
-class FullCarAdd(CarAdd):
+class FullCar(CarAdd):
     id_car: int
 
 
 class CarFuelAdd(BaseModel):
     id_car: int
-    id_fuel: int
+    fuel: Fuel
 
 
-class FullCarFuelAdd(CarFuelAdd):
+class FullCarFuel(CarFuelAdd):
     id_car_fuel: int
 
 
@@ -54,16 +48,8 @@ class PositionAdd(BaseModel):
     name_position: str
 
 
-class FullPositionAdd(PositionAdd):
+class FullPosition(PositionAdd):
     id_position: int
-
-
-class WhereDriveAdd(BaseModel):
-    name_wd: str
-
-
-class FullWhereDriveAdd(WhereDriveAdd):
-    id_wd: int
 
 
 class PeopleAdd(BaseModel):
@@ -75,7 +61,7 @@ class PeopleAdd(BaseModel):
     driving_licence: str
 
 
-class FullPeopleAdd(PeopleAdd):
+class FullPeople(PeopleAdd):
     id_people: int
 
 
@@ -84,7 +70,7 @@ class DriverAdd(BaseModel):
     date_trip: date
 
 
-class FullDriverAdd(DriverAdd):
+class FullDriver(DriverAdd):
     id_driver: int
 
 
@@ -92,9 +78,40 @@ class PassengerAdd(BaseModel):
     order: int
     id_people: int
     id_driver: int
-    id_where_drive: int
+    where_drive: WhereDrive
 
 
-class FullPassengerAdd(PassengerAdd):
+class FullPassenger(PassengerAdd):
     id_passenger: int
 
+
+class FullPointRe(FullPoint):
+    peoples: list['FullPeople']
+
+
+class FullRouteRe(FullRoute):
+    point_start: 'FullPoint'
+    point_finish: 'FullPoint'
+
+
+class FullCarRe(FullCar):
+    people: 'FullPeople'
+
+
+class FullPositionRe(FullPosition):
+    peoples: list['FullPeople']
+
+
+class FullPeopleRe(FullPeople):
+    point: 'FullPoint'
+    position: 'FullPosition'
+    cars: list['FullCar']
+
+
+class FullDriverRe(FullDriver):
+    people: 'FullPeople'
+
+
+class FullPassengerRe(FullPassenger):
+    people: 'FullPeople'
+    driver: 'FullDriverRe'

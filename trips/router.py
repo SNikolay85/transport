@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd
-from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd
+from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd
+from trips.schema import PeopleAdd, DriverAdd, PassengerAdd
 from trips.reposit import DataLoads, DataGet
 
 
@@ -35,18 +35,6 @@ async def add_route(route: Annotated[RouteAdd, Depends()]):
 async def get_route():
     routes = await DataGet.find_all_route()
     return {'routes': routes}
-
-
-@router.post('/fuel')
-async def add_fuel(fuel: Annotated[FuelAdd, Depends()]):
-    fuel_data = await DataLoads.add_fuel(fuel)
-    return fuel_data
-
-
-@router.get('/fuel')
-async def get_fuel():
-    fuels = await DataGet.find_all_fuel()
-    return {'fuels': fuels}
 
 
 @router.post('/car')
@@ -83,18 +71,6 @@ async def add_position(position: Annotated[PositionAdd, Depends()]):
 async def get_position():
     positions = await DataGet.find_all_position()
     return {'positions': positions}
-
-
-@router.post('/wd')
-async def add_wd(wd: Annotated[WhereDriveAdd, Depends()]):
-    wd_data = await DataLoads.add_wd(wd)
-    return wd_data
-
-
-@router.get('/wd')
-async def get_wd():
-    wd = await DataGet.find_all_wd()
-    return {'wd': wd}
 
 
 @router.post('/people')

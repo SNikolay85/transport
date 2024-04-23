@@ -1,83 +1,101 @@
+import asyncio
+from pprint import pprint
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP
-from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped
+from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select
+from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped, selectinload, joinedload
 from sqlalchemy.sql import func
 from datetime import datetime, date
-
+# joinedload for many-to-one, one-to-one
+# selectinload for one-to-many, many-to-many
 from typing_extensions import Annotated
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
-
-PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/test"
-
-engine = create_async_engine(PG_DSN, echo=True)
-
-Session = async_sessionmaker(engine, expire_on_commit=False)
-
-my_metadata = MetaData()
-
-intpk = Annotated[int, mapped_column(primary_key=True)]
-#point_fk = Annotated[int, mapped_column(ForeignKey('point.id_point'))]
-# car_fk = Annotated[int, mapped_column(ForeignKey('car.id_car'))]
-# fuel_fk = Annotated[int, mapped_column(ForeignKey('fuel.id_fuel'))]
-# position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position'))]
-# people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people'))]
-# driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver'))]
-# wd_fk = Annotated[int, mapped_column(ForeignKey('where_drive.id_wd'))]
-# str100 = Annotated[str, 100]
-# str20 = Annotated[str, 20]
-# str50 = Annotated[str, 50]
-# date_trip = Annotated[date, mapped_column(Date)]
-#
-# created_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
-# updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())]
+from trips.models import Session, Point, Fuel, Car, Driver, People
+from trips.schema import FullDriverRe, FullPeopleRe
 
 
-class Base(DeclarativeBase):
-    metadata = my_metadata
-    # type_annotation_map = {
-    #     str100: String(100),
-    #     str20: String(20),
-    #     str50: String(50),
-    # }
+class Operation:
+    @classmethod
+    async def id_factory(cls):
+        async with Session() as session:
+            query = select(Point).filter(Point.name_point == 'Завод')
+            result = await session.execute(query)
+            id_factory = result.scalars().first().id_point
+            return id_factory
 
 
-class Point(Base):
-    __tablename__ = 'point'
+class DataGet:
+    @classmethod
+    async def find_all_point(cls):
+        async with Session() as session:
+            query = select(Point).options(selectinload(Point.peoples))
+            result = await session.execute(query)
+            point_models = result.scalars().all()
+            return point_models
 
-    id_point: Mapped[intpk]
-    name_point: Mapped[str] = mapped_column(unique=True)
-    cost: Mapped[int]
-    # These are considered `separate` from the relationships on Route so you have to set the fks here too.
-    start_for_routes: Mapped[list['Route']] = relationship(back_populates='point_start',
-                                                           foreign_keys='[Route.id_start_point]')
-    finish_for_routes: Mapped[list['Route']] = relationship(back_populates='point_finish',
-                                                            foreign_keys='[Route.id_finish_point]')
+    @classmethod
+    async def find_all_people(cls):
+        async with (Session() as session):
+            query = (
+                select(People)
+                .options(selectinload(People.point))
+                .options(selectinload(People.position))
+                .options(joinedload(People.cars))
+                .limit(2)
+            )
+            result = await session.execute(query)
+            people_models = result.unique().scalars().all()
+            pep_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
+            return pep_dto
+
+    @classmethod
+    async def find_all_driver(cls):
+        async with (Session() as session):
+            query = (
+                select(Driver)
+                .options(selectinload(Driver.people))
+                .limit(2)
+            )
+            result = await session.execute(query)
+            driver_models = result.unique().scalars().all()
+            dr_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in driver_models]
+            return dr_dto
+
+    @classmethod
+    async def find_all_car(cls):
+        async with Session() as session:
+            query = select(Car).options(joinedload(Car.people))
+            result = await session.execute(query)
+            car_models = result.scalars().all()
+            return car_models
 
 
-class Route(Base):
-    __tablename__ = 'route'
-
-    id_route: Mapped[intpk]
-    id_start_point: Mapped[int] = mapped_column(ForeignKey('point.id_point'))
-    id_finish_point: Mapped[int] = mapped_column(ForeignKey('point.id_point'))
-    distance: Mapped[int]
+async def get_point():
+    points = await DataGet.find_all_point()
+    return {'points': points}
 
 
-    # You can pass in the column in class scope OR...
-    point_start: Mapped['Point'] = relationship(back_populates='start_for_routes', foreign_keys=id_start_point)
-    # You can use the delayed resolution here too but you have to start with at least a class.
-    point_finish: Mapped['Point'] = relationship(back_populates='finish_for_routes',
-                                                 foreign_keys='[Route.id_finish_point]')
+async def get_people():
+    people = await DataGet.find_all_people()
+    return people
 
 
-async def delete_tables():
-    async with engine.begin() as connect:
-        await connect.run_sync(Base.metadata.drop_all)
+async def get_driver():
+    driver = await DataGet.find_all_driver()
+    return driver
 
 
-async def create_tables():
-    async with engine.begin() as connect:
-        await connect.run_sync(Base.metadata.create_all)
+async def get_car():
+    car = await DataGet.find_all_car()
+    return {'car': car}
+
+
+async def get_id_factory():
+    factory = await Operation.id_factory()
+    return factory
+
+#print(list(Fuel))
+pprint(asyncio.run(get_driver()))
+#pprint(asyncio.run(get_people()))

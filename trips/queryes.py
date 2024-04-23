@@ -1,23 +1,25 @@
 import sqlalchemy
-
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from trips.models_temp import People, Point, Route, Driver, Passenger
+from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger
 
-from utils.load_data import PG_DSN
+from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
+PG_DSN = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 
-engine = sqlalchemy.create_engine(PG_DSN)
+engine = create_engine(PG_DSN, echo=False)
 
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(engine)
 
 session = Session()
+
 
 def list_id_routes(trip):
     id_trip = []
     for i in range(len(trip)-1):
         a, b = trip[i], trip[i+1]
-        one_way = session.query(Route).filter(Route.id_start_route == int(a), Route.id_finish_route == int(b)).first()
-        other_way = session.query(Route).filter(Route.id_start_route == int(b), Route.id_finish_route == int(a)).first()
+        one_way = session.query(Route).filter(Route.id_start_point == int(a), Route.id_finish_point == int(b)).first()
+        other_way = session.query(Route).filter(Route.id_start_point == int(b), Route.id_finish_point == int(a)).first()
         if one_way is None:
             id_trip.append(other_way.id_route)
         else:
@@ -30,6 +32,7 @@ def distance_route(list_route):
     for i in list_route:
         route_all += session.query(Route).filter(Route.id_route == int(i)).first().distance
     return route_all
+
 
 def map_route(list_point):
     route = []
@@ -53,57 +56,55 @@ def sum_cost(list_passenger):
         cost.append(50)
     return sum(cost)
 
+
 def person_worker(last_name):
     return (session.query(People).
             filter(People.last_name == str(last_name)).
             first()).id_people
 
+
 name_driver = 'Спешилов'
-date_trip = '2024-03-01'
+date_trip = '2024-02-01'
 factory = (session.query(Point).filter(Point.name_point == 'Завод').first()).id_point
 
 trip_forward = []
 trip_away = []
 
 '''id работника'''
-person_id = (session.query(People).
-      filter(People.last_name == name_driver).
-      first())
+person_id = (session.query(People).filter(People.last_name == name_driver).first())
+print(person_id)
 '''id работника в качестве водителя'''
 driver_id = (session.query(Driver).
-      filter(Driver.date == date_trip, Driver.driver == int(person_id.id_people)).
-      first())
-
+             filter(Driver.date_trip == date_trip, Driver.id_people == int(person_id.id_people)).first())
+print(driver_id)
 '''поиск пассажиров на работу за определенную дату c указанным водителем'''
 passenger_forward = (session.query(Passenger).
-              filter(Passenger.driver == int(driver_id.id_driver), Passenger.id_where_drive == 1).
-              order_by(Passenger.order).
-              all())
-list_passenger_forward = [i.passenger for i in passenger_forward]
-
+                     filter(Passenger.id_driver == int(driver_id.id_driver), Passenger.where_drive == 'to_work').
+                     order_by(Passenger.order).all())
+list_passenger_forward = [i.id_people for i in passenger_forward]
+print(list_passenger_forward)
 '''поиск пассажиров с работы за определенную дату c указанным водителем'''
 passenger_away = (session.query(Passenger).
-           filter(Passenger.driver == int(driver_id.id_driver), Passenger.id_where_drive == 2).
-           order_by(Passenger.order).
-           all())
-list_passenger_away = [i.passenger for i in passenger_away]
-
+                  filter(Passenger.id_driver == int(driver_id.id_driver), Passenger.where_drive == 'from_work').
+                  order_by(Passenger.order).all())
+list_passenger_away = [i.id_people for i in passenger_away]
+print(list_passenger_away)
 '''построение маршрута на работу'''
 trip_forward.append(person_id.id_point)
 for i in list_passenger_forward:
     trip_forward.append(session.query(People).filter(People.id_people == int(i)).first().id_point)
 trip_forward.append(factory)
-trip_forward = list(dict.fromkeys(trip_forward)) # удаление дублей
-
+trip_forward = list(dict.fromkeys(trip_forward))  # удаление дублей
+print(trip_forward)
 '''построение маршрута с работы'''
 for i in list_passenger_away:
     trip_away.append(session.query(People).filter(People.id_people == int(i)).first().id_point)
 trip_away.append(person_id.id_point)
 trip_away.insert(0, factory)
-trip_away = list(dict.fromkeys(trip_away)) # удаление дублей
-
+trip_away = list(dict.fromkeys(trip_away))  # удаление дублей
+print(trip_away)
 '''получение списка фамилий работников из БД'''
-person = session.query(People.last_name).all()
+#person = session.query(People.last_name).all()
 
 '''пример получения данных от web-service'''
 record = {
@@ -127,24 +128,25 @@ record = {
 #                     id_car=record['fields'].setdefault('id_car', None))
 #     session.add(people)
 #     session.commit()
+
+
 def add_record(record_answer):
     driver = Driver(id_driver=record_answer['id_driver'],
-                     driver=person_worker(record_answer['driver']),
-                     date=record_answer['date'])
+                    driver=person_worker(record_answer['driver']),
+                    date=record_answer['date'])
     session.add(driver)
     session.commit()
     for i in record_answer['passengers']:
         passengers = Passenger(id_passenger=i['id_pas'],
-                                order=i['order'],
-                                passenger=person_worker(i['last_name']),
-                                driver=driver.id_driver,
-                                id_where_drive=i['direction'])
+                               order=i['order'],
+                               passenger=person_worker(i['last_name']),
+                               driver=driver.id_driver,
+                               id_where_drive=i['direction'])
         session.add(passengers)
         session.commit()
 
 
-
-#add_record(record)
+# add_record(record)
 
 print(sum_cost(list_passenger_forward))
 print(sum_cost(list_passenger_away))
@@ -152,6 +154,7 @@ print(map_route(trip_forward))
 print(distance_route(list_id_routes(trip_forward)))
 print(map_route(trip_away))
 print(distance_route(list_id_routes(trip_away)))
+
 
 # subq = session.query(Drivers).filter(Drivers.date == '2024-10-25').subquery()
 # subq1 = session.query(People).join(subq, People.id_people == subq.c.driver).subquery()

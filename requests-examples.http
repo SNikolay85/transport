@@ -1,21 +1,20 @@
 # примеры API-запросов
 
-@baseUrl = http://localhost:8000/advertisements
+@baseUrl = http://localhost:8000
 
 ###
 # просмотр объявления
-GET {{baseUrl}}/1
+GET {{baseUrl}}/routes/p
 Content-Type: application/json
 
 ###
 # создание объявления
-POST {{baseUrl}}/
+POST {{baseUrl}}/routes/p
 Content-Type: application/json
 
 {
-  "header": "adv_1",
-  "description": "text_1",
-  "user": "user_1"
+  "name_point": "fdfd",
+  "cost": 100
 }
 
 ###

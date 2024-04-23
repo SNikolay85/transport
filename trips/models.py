@@ -42,6 +42,16 @@ class Base(DeclarativeBase):
         str50: String(50),
     }
 
+    repr_cols_num = 2
+    repr_cols = tuple()
+
+    def __repr__(self):
+        cols = []
+        for idx, col in enumerate(self.__table__.columns.keys()):
+            if col in self.repr_cols or idx < self.repr_cols_num:
+                cols.append(f'{col}={getattr(self, col)}')
+        return f'<{self.__class__.__name__} {", ".join(cols)}>'
+
 
 class Point(Base):
     __tablename__ = 'point'
@@ -59,6 +69,9 @@ class Point(Base):
                                                        foreign_keys='[Route.id_finish_point]')
     peoples: Mapped[list['People']] = relationship(back_populates='point')
 
+    repr_cols_num = 3
+    repr_cols = tuple()
+
 
 class Route(Base):
     __tablename__ = 'route'
@@ -74,6 +87,9 @@ class Route(Base):
 
     point_start: Mapped[Point] = relationship(back_populates='start_point', foreign_keys='[Route.id_start_point]')
     point_finish: Mapped[Point] = relationship(back_populates='finish_point', foreign_keys='[Route.id_finish_point]')
+
+    repr_cols_num = 4
+    repr_cols = tuple()
 
 
 class Fuel(Enum):
@@ -100,6 +116,9 @@ class Car(Base):
     car_fuels: Mapped[list['CarFuel']] = relationship(back_populates='car')
     people: Mapped['People'] = relationship(back_populates='cars')
 
+    repr_cols_num = 5
+    repr_cols = tuple()
+
 
 class CarFuel(Base):
     __tablename__ = 'car_fuel'
@@ -113,6 +132,9 @@ class CarFuel(Base):
     updated_on: Mapped[updated_on]
 
     car: Mapped['Car'] = relationship(back_populates='car_fuels')
+
+    repr_cols_num = 3
+    repr_cols = tuple()
 
 
 class Position(Base):
@@ -152,8 +174,11 @@ class People(Base):
     point: Mapped['Point'] = relationship(back_populates='peoples')
     position: Mapped['Position'] = relationship(back_populates='peoples')
     cars: Mapped[list['Car']] = relationship(back_populates='people')
-    driver: Mapped['Driver'] = relationship(back_populates='peoples')
+    drivers: Mapped[list['Driver']] = relationship(back_populates='people')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='people')
+
+    repr_cols_num = 7
+    repr_cols = tuple()
 
 
 class Driver(Base):
@@ -167,8 +192,11 @@ class Driver(Base):
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
-    peoples: Mapped[list['People']] = relationship(back_populates='driver')
+    people: Mapped['People'] = relationship(back_populates='drivers')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='driver')
+
+    repr_cols_num = 3
+    repr_cols = tuple('created_on', )
 
 
 class Passenger(Base):
@@ -186,6 +214,9 @@ class Passenger(Base):
 
     people: Mapped['People'] = relationship(back_populates='passengers')
     driver: Mapped['Driver'] = relationship(back_populates='passengers')
+
+    repr_cols_num = 5
+    repr_cols = tuple('created_on', )
 
 
 async def delete_tables():

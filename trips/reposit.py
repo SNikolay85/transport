@@ -1,8 +1,9 @@
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger
-from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd
+from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, FullPeopleRe, FullPointRe, FullCarRe
 from trips.schema import PositionAdd, PeopleAdd, DriverAdd, PassengerAdd
 import asyncio
 
@@ -149,10 +150,11 @@ class DataGet:
     @classmethod
     async def find_all_point(cls):
         async with Session() as session:
-            query = select(Point)
+            query = select(Point).options(selectinload(Point.peoples))
             result = await session.execute(query)
-            point_models = result.scalars().all()
-            return point_models
+            point_models = result.unique().scalars().all()
+            point_dto = [FullPointRe.model_validate(row, from_attributes=True) for row in point_models]
+            return point_dto
 
     @classmethod
     async def find_all_route(cls):
@@ -173,10 +175,12 @@ class DataGet:
     @classmethod
     async def find_all_car(cls):
         async with Session() as session:
-            query = select(Car)
+            query = select(Car).options(joinedload(Car.people))
             result = await session.execute(query)
-            car_models = result.scalars().all()
-            return car_models
+            car_models = result.unique().scalars().all()
+            car_dto = [FullCarRe.model_validate(row, from_attributes=True) for row in car_models]
+            return car_dto
+
 
     @classmethod
     async def find_all_car_fuel(cls):
@@ -204,11 +208,18 @@ class DataGet:
 
     @classmethod
     async def find_all_people(cls):
-        async with Session() as session:
-            query = select(People)
+        async with (Session() as session):
+            query = (
+                select(People)
+                .options(joinedload(People.point))
+                .options(joinedload(People.position))
+                .options(selectinload(People.cars))
+                .limit(2)
+            )
             result = await session.execute(query)
-            people_models = result.scalars().all()
-            return people_models
+            people_models = result.unique().scalars().all()
+            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
+            return people_dto
 
     @classmethod
     async def find_user(cls, user_id: int):

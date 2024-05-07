@@ -58,7 +58,7 @@ class PeopleAdd(BaseModel):
     patronymic: str
     id_point: int
     id_position: int
-    driving_licence: str
+    driving_licence: Optional[str]
 
 
 class FullPeople(PeopleAdd):

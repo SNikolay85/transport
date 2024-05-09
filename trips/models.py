@@ -69,6 +69,12 @@ class Point(Base):
                                                        foreign_keys='[Route.id_finish_point]')
     peoples: Mapped[list['People']] = relationship(back_populates='point')
 
+    peoples_driving_licence: Mapped[list['People']] = relationship(
+        back_populates='point',
+        primaryjoin='and_(Point.id_point == People.id_point, People.driving_licence != None)',
+        order_by='People.last_name.desc()'
+    )
+
     repr_cols_num = 3
     repr_cols = tuple()
 

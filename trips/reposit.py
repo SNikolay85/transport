@@ -3,10 +3,11 @@ from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger
-from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, FullPeopleRe, FullPointRe, FullCarRe
-from trips.schema import PositionAdd, PeopleAdd, DriverAdd, PassengerAdd
-import asyncio
 
+from trips.schema import PointAdd, FullPointRe, NamePoint, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
+    DriverAdd, PassengerAdd, FullCarRe, FullPeopleRe
+
+import asyncio
 
 class DataLoads:
     @classmethod
@@ -147,6 +148,17 @@ class DataLoads:
 
 
 class DataGet:
+    @classmethod
+    async def name_point(cls):
+        async with Session() as session:
+            query = select(Point)
+            result = await session.execute(query)
+            point_models = result.unique().scalars().all()
+            point_dto = [NamePoint.model_validate(row, from_attributes=True) for row in point_models]
+            dict_points = {i.id_point:i.name_point for i in point_dto}
+            return dict_points
+
+
     @classmethod
     async def find_all_point(cls):
         async with Session() as session:

@@ -263,4 +263,5 @@ def downgrade() -> None:
     op.drop_table("people")
     op.drop_table("position")
     op.drop_table("point")
+    op.execute("DROP TYPE fuel, wheredrive")
     # ### end Alembic commands ###

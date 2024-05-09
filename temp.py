@@ -12,8 +12,8 @@ from datetime import datetime, date
 from typing_extensions import Annotated
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
-from trips.models import Session, Point, Fuel, Car, Driver, People
-from trips.schema import FullDriverRe, FullPeopleRe, FullPointRe, FullCarRe
+from trips.models import Session, Point, Car, Driver, People, Position
+from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe
 
 
 class Operation:
@@ -38,12 +38,10 @@ class DataGet:
 
     @classmethod
     async def find_all_people(cls):
-        async with (Session() as session):
+        async with Session() as session:
             query = (
                 select(People)
-                .options(joinedload(People.point))
-                .options(joinedload(People.position))
-                .options(selectinload(People.cars))
+                .options(joinedload(People.point).load_only(Point.name_point), joinedload(People.position), selectinload(People.cars))
                 .limit(3)
             )
             result = await session.execute(query)
@@ -52,8 +50,20 @@ class DataGet:
             return people_dto
 
     @classmethod
+    async def find_point_with_people(cls):
+        async with Session() as session:
+            query = (
+                select(Point)
+                .options(selectinload(Point.peoples_driving_licence))
+            )
+            result = await session.execute(query)
+            point_models = result.unique().scalars().all()
+            point_dto = [PointDrivingLicenceRe.model_validate(row, from_attributes=True) for row in point_models]
+            return point_dto
+
+    @classmethod
     async def find_all_driver(cls):
-        async with (Session() as session):
+        async with Session() as session:
             query = (
                 select(Driver)
                 .options(selectinload(Driver.people))
@@ -103,5 +113,7 @@ class DataGet:
 # print(asyncio.run(get_id_factory()))
 #print(list(Fuel))
 #pprint(asyncio.run(DataGet.find_all_point()))
-pprint(asyncio.run(DataGet.find_all_people()))
+#pprint(asyncio.run(DataGet.find_all_people()))
 #pprint(asyncio.run(DataGet.find_all_car()))
+pprint(asyncio.run(DataGet.find_point_with_people()))
+

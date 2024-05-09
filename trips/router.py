@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd
-from trips.schema import PeopleAdd, DriverAdd, PassengerAdd
+from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, DriverAdd, PassengerAdd
+
 from trips.reposit import DataLoads, DataGet
 
 
@@ -21,8 +21,8 @@ async def add_point(data: Annotated[PointAdd, Depends()]):
 
 @router.get('/point')
 async def get_point():
-    points = await DataGet.find_all_point()
-    return {'points': points}
+    points = await DataGet.name_point()
+    return points
 
 
 @router.post('/route')

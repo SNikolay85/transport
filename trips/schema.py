@@ -1,16 +1,25 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from trips.models import Fuel, WhereDrive
+
+'''
+gt - больше, чем
+lt - меньше, чем
+ge - больше или равно
+le - меньше или равно
+multiple_of - кратно заданному числу
+allow_inf_nan - разрешать 'inf', '-inf', 'nan' значения
+'''
 
 
 # --------------------------
 # schemes for model Point
 class PointAdd(BaseModel):
-    name_point: str
-    cost: int
+    name_point: str = Field(max_lenght=100)
+    cost: int = Field(ge=0)
 
 class FullPoint(PointAdd):
     id_point: int

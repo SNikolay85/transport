@@ -155,7 +155,7 @@ class DataGet:
             result = await session.execute(query)
             point_models = result.unique().scalars().all()
             point_dto = [NamePoint.model_validate(row, from_attributes=True) for row in point_models]
-            dict_points = {i.id_point:i.name_point for i in point_dto}
+            dict_points = {int(i.id_point):i.name_point for i in point_dto}
             return dict_points
 
 
@@ -236,10 +236,17 @@ class DataGet:
     @classmethod
     async def find_user(cls, user_id: int):
         async with Session() as session:
-            query = select(People).filter(People.id_people == user_id)
+            query = (
+                select(People)
+                    .options(joinedload(People.point))
+                    .options(joinedload(People.position))
+                    .options(selectinload(People.cars))
+                    .filter(People.id_people == user_id)
+            )
             result = await session.execute(query)
-            user_models = result.scalars().all()
-            return user_models
+            people_models = result.unique().scalars().all()
+            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
+            return people_dto
 
     @classmethod
     async def find_all_driver(cls):

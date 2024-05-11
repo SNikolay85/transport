@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, DriverAdd, PassengerAdd
 
@@ -24,8 +26,12 @@ async def add_point(data: Annotated[PointAdd, Depends()]):
 
 
 @router_point.get('/name_point', response_model=dict)
+@cache(expire=30)
 async def get_point():
+    start = datetime.now()
     points = await DataGet.name_point()
+    finish = datetime.now()
+    print(finish - start)
     return points
 
 

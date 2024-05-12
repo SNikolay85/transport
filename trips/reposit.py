@@ -148,8 +148,8 @@ class DataLoads:
 
 
 class DataGet:
-    @classmethod
-    async def name_point(cls):
+    @staticmethod
+    async def all_name_point():
         async with Session() as session:
             query = select(Point)
             result = await session.execute(query)
@@ -158,11 +158,19 @@ class DataGet:
             dict_points = {int(i.id_point):i.name_point for i in point_dto}
             return dict_points
 
-
-    @classmethod
-    async def find_all_point(cls):
+    @staticmethod
+    async def find_all_point():
         async with Session() as session:
             query = select(Point).options(selectinload(Point.peoples))
+            result = await session.execute(query)
+            point_models = result.unique().scalars().all()
+            point_dto = [FullPointRe.model_validate(row, from_attributes=True) for row in point_models]
+            return point_dto
+
+    @staticmethod
+    async def find_name_point(name_point: str):
+        async with Session() as session:
+            query = select(Point).options(selectinload(Point.peoples)).filter(Point.name_point == name_point)
             result = await session.execute(query)
             point_models = result.unique().scalars().all()
             point_dto = [FullPointRe.model_validate(row, from_attributes=True) for row in point_models]

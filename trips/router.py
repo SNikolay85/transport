@@ -23,9 +23,19 @@ async def add_point(data: Annotated[PointAdd, Depends()]):
     return point_data
 
 
-@router_point.get('/name_point', response_model=dict)
+@router_point.get('/all_name_point/', response_model=dict)
 async def get_point():
-    points = await DataGet.name_point()
+    points = await DataGet.all_name_point()
+    return points
+
+@router_point.get('/{name_point}')
+async def get_point(name_point:str):
+    points = await DataGet.find_name_point(name_point)
+    return points
+
+@router_point.get('/all_point/')
+async def get_point():
+    points = await DataGet.find_all_point()
     return points
 
 

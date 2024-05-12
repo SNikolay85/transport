@@ -4,8 +4,8 @@ from sqlalchemy.orm import selectinload, joinedload
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger
 
-from trips.schema import PointAdd, FullPointRe, NamePoint, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
-    DriverAdd, PassengerAdd, FullCarRe, FullPeopleRe
+from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
+from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, NamePoint
 
 import asyncio
 

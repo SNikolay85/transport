@@ -11,16 +11,16 @@ from trips.router import router_car_fuel as car_fuel, router_people as people, r
 from trips.router import router_driver as driver, router_passenger as passenger
 
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     redis = aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
-#     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
-#     print('Server started, Redis run')
-#     yield
-#     print('Выключение')
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis = aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+    print('Server started, Redis run')
+    yield
+    print('Выключение')
 
 
-app_route = FastAPI(title='Transport') #, lifespan=lifespan)
+app_route = FastAPI(title='Transport', lifespan=lifespan)
 app_route.include_router(point)
 app_route.include_router(route)
 app_route.include_router(car)

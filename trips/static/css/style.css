@@ -11,10 +11,15 @@ table.iksweb td,table.iksweb th {
 	padding: 3px;
 	width: 100px;
 	height: 25px;
+	text-align: center;
 }
 table.iksweb th {
 	background: #347c99;
 	color: #fff;
 	font-weight: normal;
 }
-p { color: red; }
+#two {
+    width: 70%;
+    }
+#in { color: red; }
+#ad { color: green; }

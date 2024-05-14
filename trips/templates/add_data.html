@@ -3,7 +3,7 @@
     <h1 align="center">Добавление в базу</h1>
 {% endblock %}
 {% block data %}
-    <p>Добавление адреса</p>
+    <p id="ad">Добавление адреса</p>
     <form>
       Название:<br>
       <input value="н-р: Алексеевка" type="text" name="name_point" id="text_name_point"><br>
@@ -24,7 +24,7 @@
 		{% for point in points %}
 			<tr>
 				<td>{{ point.id_point }}</td>
-				<td>{{ point.name_point }} </td>
+				<td id="two">{{ point.name_point }} </td>
 				<td>{{ point.cost }}</td>
 			</tr>
         {% endfor %}

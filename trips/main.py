@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
 
 app_route = FastAPI(title='Transport', lifespan=lifespan)
 
-#app_route.mount('/static', StaticFiles(directory='static'), name='static')
+app_route.mount('/trips/static', StaticFiles(directory='trips/static'), name='static')
 
 app_route.include_router(point)
 app_route.include_router(route)

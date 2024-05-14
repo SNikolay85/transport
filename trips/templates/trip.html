@@ -1,0 +1,13 @@
+{% extends "index.html" %}
+{% block heading %}
+    <h1 align="center">Добавление поездки</h1>
+{% endblock %}
+    <p>Точка отправления</p>
+    {% block point %}
+    <p>Точка отправления</p>
+        <select name="EightiesFave">
+        {% for point in points %}
+          <option value={{ point.id_point }}>{{ point.name_point }}</option>
+        {% endfor %}
+        </select>
+    {% endblock %}

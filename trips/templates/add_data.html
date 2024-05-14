@@ -1,0 +1,17 @@
+{% extends "index.html" %}
+{% block heading %}
+    <h1 align="center">Добавление в базу</h1>
+{% endblock %}
+{% block data %}
+    <p>Добавление адреса</p>
+        <select name="EightiesFave">
+        {% for point in points %}
+          <option value={{ point.id_point }}>{{ point.name_point }}</option>
+        {% endfor %}
+        </select>
+    <ol start="1">
+        {% for point in points %}
+            <li>{{ point.name_point }} {{ point.cost }}</li>
+        {% endfor %}
+    </ol>
+{% endblock %}}

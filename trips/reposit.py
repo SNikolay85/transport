@@ -159,6 +159,15 @@ class DataGet:
             return dict_points
 
     @staticmethod
+    async def all_point():
+        async with Session() as session:
+            query = select(Point)
+            result = await session.execute(query)
+            point_models = result.unique().scalars().all()
+            point_dto = [PointAdd.model_validate(row, from_attributes=True) for row in point_models]
+            return point_dto
+
+    @staticmethod
     async def find_all_point():
         async with Session() as session:
             query = select(Point).options(selectinload(Point.peoples))

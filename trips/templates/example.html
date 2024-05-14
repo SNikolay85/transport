@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transport</title>
+</head>
+<body>
+    <h1 align="center">Here will be entering information</h1>
+    <p>Дата</p>
+    <input type="date">
+    <p>Выбор водителя</p>
+  <select name="EightiesFave">
+    <option value="1">The Cure</option>
+    <option value="2">Cocteau Twins</option>
+    <option value="3">Tears for Fears</option>
+    <option value="4">Thompson Twins</option>
+    <option value="5">Everything But the Girl</option>
+    <option value="6">Depeche Mode</option>
+    <option value="7">The Smiths</option>
+    <option value="8">New Order</option>
+  </select>
+  {% block content %}{% endblock %}
+    <img width="150" src="{{ url_for('static', path='2024-02-05_10-33-26.png') }}" alt="image">
+    <p id="season1"><b>Абзац про то, как я решил стать верстальщиком</b></p>
+    <!-- <a href="http://info.cern.ch" target="_blank">Сайт о первом веб-сайте</a> -->
+    <a href="#season1" target="_blank">Сайт о первом веб-сайте</a>
+    <p><a href="mailto:sny@mail.ru">Message to Nikolay</a></p>
+    <p><a href="tel:+79999999999">3воните нам бесплатно по телефону (999) 999-9999</a></p>
+    <hr>
+    <ul>
+      <li>Булгаков</li>
+      <li>Достоевский</li>
+      <li>Толстой</li>
+      <li>Чехов</li>
+    </ul>
+    <ol start="17">
+      <li>Булгаков</li>
+      <li>Достоевский</li>
+      <li>Толстой</li>
+      <li>Чехов</li>
+    </ol>
+</body>
+</html>

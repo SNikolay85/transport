@@ -4,14 +4,37 @@
 {% endblock %}
 {% block data %}
     <p>Добавление адреса</p>
-        <select name="EightiesFave">
+    <form>
+      Название:<br>
+      <input value="н-р: Алексеевка" type="text" name="name_point" id="text_name_point"><br>
+      Стоимость:<br>
+      <input type="text" name="cost" id="text_cost_point"><br>
+      <br>
+      <input type="submit">
+      <input type="reset" value="Начать заново">
+    </form>
+<br>
+    <table class="iksweb">
+	<tbody>
+		<tr>
+			<td>№</td>
+			<td>Название</td>
+			<td>Стоимость</td>
+		</tr>
+		{% for point in points %}
+			<tr>
+				<td>{{ point.id_point }}</td>
+				<td>{{ point.name_point }} </td>
+				<td>{{ point.cost }}</td>
+			</tr>
+        {% endfor %}
+	</tbody>
+</table>
+
+    <br>
+    <select name="EightiesFave">
         {% for point in points %}
           <option value={{ point.id_point }}>{{ point.name_point }}</option>
         {% endfor %}
         </select>
-    <ol start="1">
-        {% for point in points %}
-            <li>{{ point.name_point }} {{ point.cost }}</li>
-        {% endfor %}
-    </ol>
 {% endblock %}}

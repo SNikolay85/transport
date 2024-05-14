@@ -4,7 +4,8 @@ from sqlalchemy.orm import selectinload, joinedload
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger
 
-from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
+from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
+    FullPoint
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, NamePoint
 
 import asyncio
@@ -164,7 +165,7 @@ class DataGet:
             query = select(Point)
             result = await session.execute(query)
             point_models = result.unique().scalars().all()
-            point_dto = [PointAdd.model_validate(row, from_attributes=True) for row in point_models]
+            point_dto = [FullPoint.model_validate(row, from_attributes=True) for row in point_models]
             return point_dto
 
     @staticmethod

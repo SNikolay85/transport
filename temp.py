@@ -16,6 +16,35 @@ from trips.models import Session, Point, Car, Driver, People, Position
 from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe
 
 
+from fastapi import FastAPI, Body
+from fastapi.responses import FileResponse
+
+app = FastAPI()
+
+
+@app.get("/")
+def root():
+    return FileResponse("trips/templates/test_1.html")
+
+
+@app.post("/hello")
+# def hello(name = Body(embed=True)):
+def hello(data=Body()):
+    name = data["name"]
+    age = data["age"]
+    return {"message": f"{name}, ваш возраст - {age}"}
+
+
+
+
+a = r"='1'!DB24+'2'!DB24+'3'!DB24+'4'!DB24+'5'!DB24+'6'!DB24+'7'!DB24+'8'!DB24+'9'!DB24+'10'!DB24+'11'!DB24+'12'!DB24+'13'!DB24+'14'!DB24+'15'!DB24+'16'!DB24+'17'!DB24+'18'!DB24+'19'!DB24+'20'!DB24+'21'!DB24+'22'!DB24+'23'!DB24+'24'!DB24+'25'!DB24+'26'!DB24+'27'!DB24+'28'!DB24+'29'!DB24+'30'!DB24+'31'!DB24"
+def replace_str(string):
+    b = ['L' if i == 'B' else i for i in string]
+    return print("".join(b))
+
+#replace_str(a)
+
+
 class Operation:
     @classmethod
     async def id_factory(cls):
@@ -115,5 +144,5 @@ class DataGet:
 #pprint(asyncio.run(DataGet.find_all_point()))
 #pprint(asyncio.run(DataGet.find_all_people()))
 #pprint(asyncio.run(DataGet.find_all_car()))
-pprint(asyncio.run(DataGet.find_point_with_people()))
+#pprint(asyncio.run(DataGet.find_point_with_people()))
 

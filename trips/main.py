@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from trips.router import router_point as point, router_route as route, router_car as car
@@ -37,17 +37,17 @@ app_route.include_router(driver)
 app_route.include_router(passenger)
 app_route.include_router(router_page)
 
-# origins = [
-#     'http://localhost:8000',
-# ]
-#
-# app_route.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
-#     allow_headers=["Set-Cookie", "Access-Control-Allow-Headers", "Authorization", "Accept", "Accept-Language", "Content-Language", "Content-Type"],
-# )
+origins = [
+    'http://localhost:8000',
+]
+
+app_route.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+    allow_headers=["Set-Cookie", "Access-Control-Allow-Headers", "Authorization", "Accept", "Accept-Language", "Content-Language", "Content-Type"],
+)
 
 
 # if __name__ == '__main__':

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Поездки ССХ</title>
+    <link href="{{ url_for('css', path='/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    {% block heading %}{% endblock %}
+    <hr>
+    {% block data %}{% endblock %}
+    {% block point %}{% endblock %}
+<p id="in">Добавление адреса</p>
+</body>
+</html>

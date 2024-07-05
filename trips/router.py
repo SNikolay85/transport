@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Form, Body
 from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, DriverAdd, PassengerAdd
@@ -21,9 +21,17 @@ router_passenger = APIRouter(prefix='/passenger', tags=['Passenger'])
 
 
 @router_point.post('/')
-async def add_point(data: Annotated[PointAdd, Depends()]):
+async def add_point(data: PointAdd = Body()):
     point_data = await DataLoads.add_point(data)
-    return point_data
+    return {"message": f"{point_data['name_point']}, добавлено в базу"}
+
+# @router_point.post('/')
+# async def add_point(data: Annotated[PointAdd, Body(), Depends()]):
+# #async def add_point(name_point: str=Form(), cost: int=Form()):
+#     # data = {'name_point': name_point, 'cost': cost}
+#     print(data)
+#     point_data = await DataLoads.add_point(data)
+#     return point_data
 
 
 @router_point.get('/all_name_point/', response_model=dict)

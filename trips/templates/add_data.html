@@ -4,15 +4,31 @@
 {% endblock %}
 {% block data %}
     <p id="ad">Добавление адреса</p>
+
     <form>
-      Название:<br>
-      <input value="н-р: Алексеевка" type="text" name="name_point" id="text_name_point"><br>
-      Стоимость:<br>
-      <input type="text" name="cost" id="text_cost_point"><br>
-      <br>
-      <input type="submit">
-      <input type="reset" value="Начать заново">
+         <div id="message"></div>
+         <p>
+            Введите название: <br />
+            <input name="name_point" id="name_point" />
+        </p>
+         <p>
+            Введите стоимость: <br />
+            <input name="cost" id="cost" type="number" />
+        </p>
+        <button onclick="send()">Отправить</button>
+        <button type="reset">Начать заново</button>
     </form>
+
+
+<!--    <form action="http://127.0.0.1:8000/point/" method="POST">-->
+<!--      Название:<br>-->
+<!--      <input type="text" name="name_point" id="name_point"><br>-->
+<!--      Стоимость:<br>-->
+<!--      <input type="text" name="cost" id="cost"><br>-->
+<!--      <br>-->
+<!--      <button type="submit">Отправить</button>-->
+<!--      <button type="reset">Начать заново</button>-->
+<!--    </form>-->
 <br>
     <table class="iksweb">
 	<tbody>
@@ -37,4 +53,26 @@
           <option value={{ point.id_point }}>{{ point.name_point }}</option>
         {% endfor %}
         </select>
+<script>
+    async function send(){
+
+        const name_point = document.getElementById("name_point").value;
+        const cost = document.getElementById("cost").value;
+
+        const response = await fetch("/point/", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name_point: name_point,
+                    cost: cost
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("message").textContent = data.message;
+            }
+            else
+                console.log(response);
+    }
+</script>
 {% endblock %}}

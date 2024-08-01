@@ -37,12 +37,12 @@ def hello(data=Body()):
 
 
 
-a = r"='1'!DB24+'2'!DB24+'3'!DB24+'4'!DB24+'5'!DB24+'6'!DB24+'7'!DB24+'8'!DB24+'9'!DB24+'10'!DB24+'11'!DB24+'12'!DB24+'13'!DB24+'14'!DB24+'15'!DB24+'16'!DB24+'17'!DB24+'18'!DB24+'19'!DB24+'20'!DB24+'21'!DB24+'22'!DB24+'23'!DB24+'24'!DB24+'25'!DB24+'26'!DB24+'27'!DB24+'28'!DB24+'29'!DB24+'30'!DB24+'31'!DB24"
+a = r"='1'!ET24+'2'!ET24+'3'!ET24+'4'!ET24+'5'!ET24+'6'!ET24+'7'!ET24+'8'!ET24+'9'!ET24+'10'!ET24+'11'!ET24+'12'!ET24+'13'!ET24+'14'!ET24+'15'!ET24+'16'!ET24+'17'!ET24+'18'!ET24+'19'!ET24+'20'!ET24+'21'!ET24+'22'!ET24+'23'!ET24+'24'!ET24+'25'!ET24+'26'!ET24+'27'!ET24+'28'!ET24+'29'!ET24+'30'!ET24+'31'!ET24"
 def replace_str(string):
-    b = ['L' if i == 'B' else i for i in string]
+    b = ['D' if i == 'T' else i for i in string]
     return print("".join(b))
 
-#replace_str(a)
+replace_str(a)
 
 
 class Operation:

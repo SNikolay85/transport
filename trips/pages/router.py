@@ -22,7 +22,7 @@ def get_base_page(request: Request):
 
 @router_page.get('/base')
 def get_base_page(request: Request):
-    return templates.TemplateResponse('index1.html', {'request': request})
+    return templates.TemplateResponse('index.html', {'request': request})
 
 @router_page.get('/trip')
 def get_trip_page(request: Request, points=Depends(DataGet.find_all_point)):

@@ -5,13 +5,14 @@ from fastapi import FastAPI
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from redis import asyncio as aioredis
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 
 from trips.router import router_point as point, router_route as route, router_car as car
 from trips.router import router_car_fuel as car_fuel, router_people as people, router_position as position
 from trips.router import router_driver as driver, router_passenger as passenger
 from trips.pages.router import router_page
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,6 +40,7 @@ app_route.include_router(router_page)
 
 origins = [
     'http://localhost:8000',
+    'http://localhost:8001/people/',
 ]
 
 app_route.add_middleware(

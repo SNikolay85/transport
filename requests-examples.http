@@ -9,12 +9,12 @@ Content-Type: application/json
 
 ###
 # создание объявления
-POST {{baseUrl}}/routes/p
+POST {{baseUrl}}/feedback/
 Content-Type: application/json
 
 {
-  "name_point": "fdfd",
-  "cost": 100
+    "name": "Nikolay",
+    "message": "Great"
 }
 
 ###

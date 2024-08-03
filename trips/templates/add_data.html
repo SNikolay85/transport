@@ -3,18 +3,33 @@
     <h1 align="center">Добавление в базу</h1>
 {% endblock %}
 {% block data %}
-    <p class="ad">Добавление нового адреса</p>
-    <form class="add_point">
-      Название:<br>
-      <input type="text" name="name_point" id="text_name_point">
-        <button class="favorite styled" type="button">Добавить</button>
-        <br>
-      Стоимость:<br>
-      <input type="text" name="cost" id="text_cost_point">
-        <button class="favorite styled" type="reset">Очистить поля</button>
-        <br>
+    <p id="ad">Добавление адреса</p>
+
+    <form>
+         <div id="message"></div>
+         <p>
+            Введите название: <br />
+            <input name="name_point" id="name_point" />
+        </p>
+         <p>
+            Введите стоимость: <br />
+            <input name="cost" id="cost" type="number" />
+        </p>
+        <button onclick="send()">Отправить</button>
+        <button type="reset">Начать заново</button>
     </form>
-    <br>
+
+
+<!--    <form action="http://127.0.0.1:8000/point/" method="POST">-->
+<!--      Название:<br>-->
+<!--      <input type="text" name="name_point" id="name_point"><br>-->
+<!--      Стоимость:<br>-->
+<!--      <input type="text" name="cost" id="cost"><br>-->
+<!--      <br>-->
+<!--      <button type="submit">Отправить</button>-->
+<!--      <button type="reset">Начать заново</button>-->
+<!--    </form>-->
+<br>
     <table class="iksweb">
 	<tbody>
 		<tr>
@@ -29,6 +44,36 @@
 				<td>{{ point.cost }}</td>
 			</tr>
         {% endfor %}
-        </tbody>
-    </table>
+
+	</tbody>
+</table>
+
+    <br>
+    <select name="EightiesFave">
+        {% for point in points %}
+          <option value={{ point.id_point }}>{{ point.name_point }}</option>
+        {% endfor %}
+        </select>
+<script>
+    async function send(){
+
+        const name_point = document.getElementById("name_point").value;
+        const cost = document.getElementById("cost").value;
+
+        const response = await fetch("/point/", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name_point: name_point,
+                    cost: cost
+                })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("message").textContent = data.message;
+            }
+            else
+                console.log(response);
+    }
+</script>
 {% endblock %}}

@@ -13,6 +13,7 @@ from trips.router import router_car_fuel as car_fuel, router_people as people, r
 from trips.router import router_driver as driver, router_passenger as passenger
 from trips.pages.router import router_page
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     redis = aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
@@ -37,17 +38,18 @@ app_route.include_router(driver)
 app_route.include_router(passenger)
 app_route.include_router(router_page)
 
-# origins = [
-#     'http://localhost:8000',
-# ]
-#
-# app_route.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
-#     allow_headers=["Set-Cookie", "Access-Control-Allow-Headers", "Authorization", "Accept", "Accept-Language", "Content-Language", "Content-Type"],
-# )
+origins = [
+    'http://localhost:8000',
+    'http://localhost:8001/people/',
+]
+
+app_route.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+    allow_headers=["Set-Cookie", "Access-Control-Allow-Headers", "Authorization", "Accept", "Accept-Language", "Content-Language", "Content-Type"],
+)
 
 
 # if __name__ == '__main__':

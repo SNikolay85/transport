@@ -20,7 +20,7 @@ class DataLoads:
             await session.commit()
             return {
                 "id_point": point.id_point,
-                "name": point.name_point,
+                "name_point": point.name_point,
                 "cost": point.cost
             }
 

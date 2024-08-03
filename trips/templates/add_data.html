@@ -3,17 +3,18 @@
     <h1 align="center">Добавление в базу</h1>
 {% endblock %}
 {% block data %}
-    <p id="ad">Добавление адреса</p>
-    <form>
+    <p class="ad">Добавление нового адреса</p>
+    <form class="add_point">
       Название:<br>
-      <input value="н-р: Алексеевка" type="text" name="name_point" id="text_name_point"><br>
+      <input type="text" name="name_point" id="text_name_point">
+        <button class="favorite styled" type="button">Добавить</button>
+        <br>
       Стоимость:<br>
-      <input type="text" name="cost" id="text_cost_point"><br>
-      <br>
-      <input type="submit">
-      <input type="reset" value="Начать заново">
+      <input type="text" name="cost" id="text_cost_point">
+        <button class="favorite styled" type="reset">Очистить поля</button>
+        <br>
     </form>
-<br>
+    <br>
     <table class="iksweb">
 	<tbody>
 		<tr>
@@ -28,13 +29,6 @@
 				<td>{{ point.cost }}</td>
 			</tr>
         {% endfor %}
-	</tbody>
-</table>
-
-    <br>
-    <select name="EightiesFave">
-        {% for point in points %}
-          <option value={{ point.id_point }}>{{ point.name_point }}</option>
-        {% endfor %}
-        </select>
+        </tbody>
+    </table>
 {% endblock %}}

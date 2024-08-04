@@ -6,7 +6,7 @@ from trips.models import WhereDrive, People, Driver, Passenger
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
     FullPoint
-from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, NamePoint
+from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
 
 import asyncio
 
@@ -244,7 +244,7 @@ class DataGet:
                 .options(joinedload(People.point))
                 .options(joinedload(People.position))
                 .options(selectinload(People.cars))
-                .limit(2)
+                .limit(4)
             )
             result = await session.execute(query)
             people_models = result.unique().scalars().all()
@@ -269,10 +269,15 @@ class DataGet:
     @classmethod
     async def find_all_driver(cls):
         async with Session() as session:
-            query = select(Driver)
+            query = (
+                select(Driver)
+                .options(joinedload(Driver.people))
+                .limit(10)
+            )
             result = await session.execute(query)
-            drivers_models = result.scalars().all()
-            return drivers_models
+            drivers_models = result.unique().scalars().all()
+            driver_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in drivers_models]
+            return driver_dto
 
     @classmethod
     async def find_all_passengers(cls):
@@ -281,3 +286,4 @@ class DataGet:
             result = await session.execute(query)
             passenger_models = result.scalars().all()
             return passenger_models
+

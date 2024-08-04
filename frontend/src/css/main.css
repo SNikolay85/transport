@@ -7,15 +7,18 @@
 }
 
 body {
-    background-color: #776a6a;
-    color: #0bc621;
+    background-color: d2ebd2;
+    color: #222;
     font-family: "Montserrat", sans-serif;
     font-weight: 300;
 }
 
 .header {
-    background-color: #222;
-    padding: 25px 100px;
+    padding: 20px 0 20px 45%;
+    border: none;
+    font: normal 22px/1 "Times New Roman", Times, serif;
+    color: black;
+    background: #7cb0d3;
     font-weight: 600;
 }
 
@@ -32,7 +35,7 @@ aside {
     float: left;
 }
 
-.block_user {
+.block_driver {
     margin-bottom: 50px;
     background-color: #3e8fa0;
     padding: 20px;

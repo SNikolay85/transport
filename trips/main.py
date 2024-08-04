@@ -40,7 +40,7 @@ app_route.include_router(router_page)
 
 origins = [
     'http://localhost:8000',
-    'http://localhost:8001/people/',
+    'http://localhost:8001',
 ]
 
 app_route.add_middleware(

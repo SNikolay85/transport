@@ -1,6 +1,6 @@
 import React from "react"
 import { IoCloseCircleSharp, IoHammerSharp } from "react-icons/io5"
-import AddUser from "./AddUser"
+//import AddUser from "./AddUser"
 
 class User extends React.Component {
     constructor(props) {

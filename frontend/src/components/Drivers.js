@@ -7,9 +7,9 @@ class Drivers extends React.Component {
             return (
                 <div>
                     {this.props.drivers.map((driver) => (
-                        <div className="block_driver" key={driver.id_driver}>
-                            <h3>{driver.people.first_name} {driver.people.last_name}</h3>
-                            <p>{driver.date_trip}</p>
+                        <div className="block_driver" key={driver.id_people}>
+                            <h3>{driver.first_name} {driver.last_name}</h3>
+                            <p>{driver.driving_licence}</p>
                         </div>
                     ))}
                 </div>

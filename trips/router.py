@@ -114,6 +114,12 @@ async def get_people():
     return {'peoples': peoples}
 
 
+@router_people.get('/driver/')
+async def get_people():
+    drivers = await DataGet.find_all_driver()
+    return {'drivers': drivers}
+
+
 @router_people.get('/{user_id}')
 async def get_user(user_id: int):
     user = await DataGet.find_user(user_id)
@@ -128,8 +134,8 @@ async def add_driver(driver: Annotated[DriverAdd, Depends()]):
 
 @router_driver.get('/')
 async def get_driver():
-    drivers = await DataGet.find_all_driver()
-    return {'drivers': drivers}
+    car_carrier = await DataGet.find_all_car_carrier()
+    return {'car_carrier': car_carrier}
 
 
 @router_passenger.post('/')

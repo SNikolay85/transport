@@ -270,6 +270,22 @@ class DataGet:
     async def find_all_driver(cls):
         async with Session() as session:
             query = (
+                select(People)
+                .options(joinedload(People.point))
+                .options(joinedload(People.position))
+                .options(selectinload(People.cars))
+                .filter(People.driving_licence != '')
+                .limit(50)
+            )
+            result = await session.execute(query)
+            people_models = result.unique().scalars().all()
+            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
+            return people_dto
+
+    @classmethod
+    async def find_all_car_carrier(cls):
+        async with Session() as session:
+            query = (
                 select(Driver)
                 .options(joinedload(Driver.people))
                 .limit(10)

@@ -9,11 +9,12 @@ const baseurl = "http://127.0.0.1:8000/people/"
 class Les7 extends React.Component {
        constructor(props) {
               super(props)
+
                axios.get(baseurl).then((res) => {
                       this.setState({users: res.data.peoples })
                })
 //              axios.get(baseurl).then((res) => {
-//                     console.log(res.data)
+//                     console.log(res.data.peoples)
 //              })
 
               this.state = {

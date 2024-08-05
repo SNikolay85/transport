@@ -4,18 +4,17 @@ import Users from "./Users"
 import AddUser from "./AddUser"
 import axios from "axios"
 
-// const baseurl = 'http://127.0.0.1:8000/people'
-const baseurl = "https://reqres.in/api/users?page=2"
+const baseurl = "http://127.0.0.1:8000/people/"
+//const baseurl = "https://reqres.in/api/users?page=2"
 class Les7 extends React.Component {
        constructor(props) {
               super(props)
-
-              // axios.get(baseurl).then((res) => {
-              //        this.setState({users: res.data.peoples })
-              // })
-              axios.get(baseurl).then((res) => {
-                     console.log(res.data)
-              })
+               axios.get(baseurl).then((res) => {
+                      this.setState({users: res.data.peoples })
+               })
+//              axios.get(baseurl).then((res) => {
+//                     console.log(res.data)
+//              })
 
               this.state = {
                    users: [

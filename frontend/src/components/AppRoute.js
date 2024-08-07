@@ -23,7 +23,7 @@ class AppRoute extends React.Component
        render() {
           return(
              <div>
-                <Header my_text={<p>Дата поездки:{<Calendar />}</p>} />
+                <Header my_text={'Дата поездки:'} content=<Calendar /> />
                 <div className='first_form'>
                     <select>
                         <option value={'hello'}></option>
@@ -35,9 +35,9 @@ class AppRoute extends React.Component
                     <Calendar />
                     <Drivers drivers={this.state.drivers} />
                 </div>
-//                <aside>
-//                   <ListDrivers drivers={this.state.drivers} />
-//                </aside>
+                <aside>
+                   <ListDrivers drivers={this.state.drivers} />
+                </aside>
              </div>)
        }
     }

@@ -43,7 +43,7 @@ class Calendar extends React.Component {
           <button className="btn btn-primary">Show Date</button>
         </div>
       </form>
-    );
+    )
   }
 
 

@@ -18,12 +18,27 @@ class AppRoute extends React.Component
                       this.setState({drivers: res.data.drivers })
                })
 
-               this.state = {drivers: []}
+               axios.get(baseurl+'/driver/2024-02-01/').then((res) => {
+                      this.setState({driver_date: res.data.car_carrier })
+               })
+
+               axios.get(baseurl+'/driver/2024-02-01/').then((res) => {
+                     console.log(res.data.car_carrier)})
+
+               axios.get(baseurl+'/people/driver/').then((res) => {
+                     console.log(res.data.drivers)})
+
+               this.state = {
+                             drivers: [],
+                             date_now: new Date(),
+                             driver_date: []
+                             }
             }
        render() {
           return(
              <div>
-                <Header my_text={'Дата поездки:'} content=<Calendar /> />
+                <Header my_text='Дата поездки' />
+                <Calendar />
                 <div className='first_form'>
                     <select>
                         <option value={'hello'}></option>
@@ -36,7 +51,7 @@ class AppRoute extends React.Component
                     <Drivers drivers={this.state.drivers} />
                 </div>
                 <aside>
-                   <ListDrivers drivers={this.state.drivers} />
+                    <ListDrivers driver_date={this.state.driver_date} />
                 </aside>
              </div>)
        }

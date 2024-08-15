@@ -282,6 +282,22 @@ class DataGet:
             people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
             return people_dto
 
+
+    @classmethod
+    async def find_driver_of_date(cls, now_date_trip):
+        async with Session() as session:
+            query = (
+                select(Driver)
+                .options(joinedload(Driver.people))
+                .filter(Driver.date_trip == now_date_trip)
+                .limit(10)
+            )
+            result = await session.execute(query)
+            drivers_models = result.unique().scalars().all()
+            driver_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in drivers_models]
+            return driver_dto
+
+
     @classmethod
     async def find_all_car_carrier(cls):
         async with Session() as session:

@@ -138,6 +138,12 @@ async def get_driver():
     return {'car_carrier': car_carrier}
 
 
+@router_driver.get('/{now_date_trip}')
+async def get_date_trip_driver(now_date_trip: datetime):
+    car_carrier = await DataGet.find_driver_of_date(now_date_trip)
+    return {'car_carrier': car_carrier}
+
+
 @router_passenger.post('/')
 async def add_passenger(passenger: Annotated[PassengerAdd, Depends()]):
     passenger_data = await DataLoads.add_passenger(passenger)

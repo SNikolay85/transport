@@ -13,7 +13,7 @@ body {
 }
 
 .header {
-    padding: 20px 0 20px 45%;
+    padding: 10px 0 10px 45%;
     border: none;
     font: normal 22px/1 "Times New Roman", Times, serif;
     color: black;
@@ -23,14 +23,14 @@ body {
 
 .main_form {
     margin: 50px 100px;
-    width: 50%;
+    width: 40%;
     float: left;
 }
 
 aside {
     margin-top: 50px;
     margin-left: 5%;
-    width: 20%;
+    width: 40%;
     float: left;
 }
 

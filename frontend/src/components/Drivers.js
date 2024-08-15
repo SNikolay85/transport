@@ -17,7 +17,7 @@ class Drivers extends React.Component {
         else
             return (
                 <div className="block_user">
-                    <h3>Пользователей нет</h3>
+                    <h3>Нет водителей</h3>
                 </div>
             )
     }

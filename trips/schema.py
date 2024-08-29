@@ -3,8 +3,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from trips.models import Fuel, WhereDrive
-
 '''
 gt - больше, чем
 lt - меньше, чем
@@ -38,10 +36,26 @@ class PointMin(BaseModel):
     name_point: str
 
 # --------------------------
+# schemes for model Fuel
+class FuelAdd(BaseModel):
+    name_fuel: str
+
+class FullFuel(FuelAdd):
+    id_fuel: int
+
+# --------------------------
+# schemes for model WhereDrive
+class WhereDriveAdd(BaseModel):
+    name_wd: str
+
+class FullWhereDrive(WhereDriveAdd):
+    id_wd: int
+
+# --------------------------
 # schemes for model CarFuel
 class CarFuelAdd(BaseModel):
     id_car: int
-    fuel: Fuel
+    id_fuel: int
 
 class FullCarFuel(CarFuelAdd):
     id_car_fuel: int
@@ -101,7 +115,7 @@ class PassengerAdd(BaseModel):
     order: int
     id_people: int
     id_driver: int
-    where_drive: WhereDrive
+    where_drive: int
 
 class FullPassenger(PassengerAdd):
     id_passenger: int
@@ -109,6 +123,7 @@ class FullPassenger(PassengerAdd):
 class FullPassengerRe(FullPassenger):
     people: 'FullPeople'
     driver: 'FullDriverRe'
+    wd: 'FullWhereDrive'
 
 # --------------------------
 # schemes for model Position
@@ -134,3 +149,13 @@ class FullRoute(RouteAdd):
 class FullRouteRe(FullRoute):
     point_start: 'FullPoint'
     point_finish: 'FullPoint'
+
+# --------------------------
+# schemes for model Refueling
+class RefuelingAdd(BaseModel):
+    id_fuel: int
+    id_people: int
+    date_refueling: date
+
+class FullRefueling(RefuelingAdd):
+    id_refueling: int

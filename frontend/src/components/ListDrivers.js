@@ -1,7 +1,6 @@
 import React from 'react'
 import axios from 'axios'
 import baseurl from './RoutesLinks'
-import SimpleDateTime  from 'react-simple-timestamp-to-date';
 
 //import { useTable } from 'react-table'
 import { format } from 'date-fns'
@@ -13,22 +12,17 @@ class ListDrivers extends React.Component {
             {
               super(props)
 
-              const dateString = format(this.props.my_date, 'yyyy-MM-dd')
-
-              const timestamp = Date.parse(this.props.my_date)
-              const date_1 = new Intl.DateTimeFormat('en-EN', {year: 'numeric', month: '2-digit',day: '2-digit'}).format(this.props.my_date)
-
-
+              let dateString = format(this.props.my_date, 'yyyy-MM-dd')
               const da = '2024-02-02'
 
-               axios.get(baseurl+'/driver/'+dateString+'/').then((res) => {
-                      this.setState({driver_date: res.data.car_carrier })
-               })
+              axios.get(baseurl+'/driver/'+dateString+'/').then((res) => {
+                  this.setState({driver_date: res.data.car_carrier })
+              })
 
 
                this.state = {
                              driver_date: [],
-                             date: format(this.props.my_date, 'yyyy-MM-dd')
+                             date: dateString
                              }
             }
     render() {

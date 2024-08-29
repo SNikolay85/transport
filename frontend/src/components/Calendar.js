@@ -43,7 +43,7 @@ class Calendar extends React.Component {
           />
           <button className="btn btn-primary">Show Date</button>
         </div>
-        <ListDrivers my_date={this.state.startDate} />
+        <ListDrivers my_date={ this.state.startDate } />
       </form>
 
     )

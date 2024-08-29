@@ -5,7 +5,7 @@ from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
-    FullPoint
+    FullPoint, FuelAdd, WhereDriveAdd
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
 
 import asyncio
@@ -38,17 +38,17 @@ class DataLoads:
                 "distance": route.distance
             }
 
-    # @classmethod
-    # async def add_fuel(cls, data: FuelAdd) -> dict:
-    #     async with Session() as session:
-    #         fuel = Fuel(**(data.model_dump()))
-    #         session.add(fuel)
-    #         await session.flush()
-    #         await session.commit()
-    #         return {
-    #             "id_fuel": fuel.id_fuel,
-    #             "name_fuel": fuel.name_fuel
-    #         }
+    @classmethod
+    async def add_fuel(cls, data: FuelAdd) -> dict:
+        async with Session() as session:
+            fuel = Fuel(**(data.model_dump()))
+            session.add(fuel)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_fuel": fuel.id_fuel,
+                "name_fuel": fuel.name_fuel
+            }
 
     @classmethod
     async def add_car(cls, data: CarAdd) -> dict:
@@ -90,17 +90,17 @@ class DataLoads:
                 "name_position": position.name_position
             }
 
-    # @classmethod
-    # async def add_wd(cls, data: WhereDriveAdd) -> dict:
-    #     async with Session() as session:
-    #         wd = WhereDrive(**(data.model_dump()))
-    #         session.add(wd)
-    #         await session.flush()
-    #         await session.commit()
-    #         return {
-    #             "id_wd": wd.id_wd,
-    #             "name_wd": wd.name_wd
-    #         }
+    @classmethod
+    async def add_wd(cls, data: WhereDriveAdd) -> dict:
+        async with Session() as session:
+            wd = WhereDrive(**(data.model_dump()))
+            session.add(wd)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_wd": wd.id_wd,
+                "name_wd": wd.name_wd
+            }
 
     @classmethod
     async def add_people(cls, data: PeopleAdd) -> dict:

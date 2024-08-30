@@ -116,7 +116,6 @@ async def load_db(data_trans):
     await asyncio.shield(session.close())
     return print('Данные считаны и загружены в БД')
 
-
 if __name__ == '__main__':
     # asyncio.get_event_loop().run_until_complete(reboot_tables())
     # #asyncio.run(reboot_tables())

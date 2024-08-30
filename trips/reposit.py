@@ -14,7 +14,12 @@ class DataLoads:
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
         async with Session() as session:
-            point = Point(**(data.model_dump()))
+            query_point = select(Point.id_point)
+            result_point = await session.execute(query_point)
+            point_models = result_point.unique().scalars().all()
+            #point = Point(**(data.model_dump()))
+            point = Point(**(data.model_dump()), id_point = max(point_models)+1)
+            #point = Point(id_point = max(point_models)+1)
             session.add(point)
             await session.flush()
             await session.commit()

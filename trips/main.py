@@ -10,7 +10,7 @@ from starlette.staticfiles import StaticFiles
 
 from trips.router import router_point as point, router_route as route, router_car as car
 from trips.router import router_car_fuel as car_fuel, router_people as people, router_position as position
-from trips.router import router_driver as driver, router_passenger as passenger
+from trips.router import router_driver as driver, router_passenger as passenger, router_refueling as refueling
 from trips.pages.router import router_page
 
 
@@ -36,6 +36,7 @@ app_route.include_router(position)
 app_route.include_router(people)
 app_route.include_router(driver)
 app_route.include_router(passenger)
+app_route.include_router(refueling)
 app_route.include_router(router_page)
 
 origins = [

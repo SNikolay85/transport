@@ -43,6 +43,9 @@ class FuelAdd(BaseModel):
 class FullFuel(FuelAdd):
     id_fuel: int
 
+class FullFuelRe(FullFuel):
+    refuelings: list['RefuelingAdd']
+
 # --------------------------
 # schemes for model WhereDrive
 class WhereDriveAdd(BaseModel):
@@ -95,7 +98,7 @@ class FullCar(CarAdd):
     id_car: int
 
 class FullCarRe(FullCar):
-    people: 'FullPeople'
+    people: 'FullPeopleRe'
 
 # --------------------------
 # schemes for model Driver
@@ -159,3 +162,7 @@ class RefuelingAdd(BaseModel):
 
 class FullRefueling(RefuelingAdd):
     id_refueling: int
+
+class RefuelingPeople(FullRefueling):
+    fuel: 'FullFuel'
+    people: 'FullPeopleRe'

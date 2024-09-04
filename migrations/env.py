@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from trips.models import Base
-from config import PG_DB, PG_HOST, PG_PORT, PG_USER, PG_PASSWORD
+from config import PG_DB, REAL_DB, PG_HOST, PG_PORT, PG_USER, PG_PASSWORD
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,6 +15,7 @@ config = context.config
 section = config.config_ini_section
 config.set_section_option(section, "PG_HOST", PG_HOST)
 config.set_section_option(section, "PG_DB", PG_DB)
+#config.set_section_option(section, "REAL_DB", REAL_DB)
 config.set_section_option(section, "PG_PORT", PG_PORT)
 config.set_section_option(section, "PG_USER", PG_USER)
 config.set_section_option(section, "PG_PASSWORD", PG_PASSWORD)

@@ -44,7 +44,7 @@ class FullFuel(FuelAdd):
     id_fuel: int
 
 class FullFuelRe(FullFuel):
-    refuelings: list['RefuelingAdd']
+    refuelings: list['FullRefueling']
 
 # --------------------------
 # schemes for model WhereDrive
@@ -53,6 +53,9 @@ class WhereDriveAdd(BaseModel):
 
 class FullWhereDrive(WhereDriveAdd):
     id_wd: int
+
+class FullWhereDriveRe(FullWhereDrive):
+    passengers: list['FullPassenger']
 
 # --------------------------
 # schemes for model CarFuel
@@ -72,6 +75,7 @@ class PeopleAdd(BaseModel):
     id_point: int
     id_position: int
     driving_licence: Optional[str]
+
 
 class FullPeople(PeopleAdd):
     id_people: int
@@ -98,7 +102,7 @@ class FullCar(CarAdd):
     id_car: int
 
 class FullCarRe(FullCar):
-    people: 'FullPeopleRe'
+    people: 'FullPeople'
 
 # --------------------------
 # schemes for model Driver
@@ -163,6 +167,6 @@ class RefuelingAdd(BaseModel):
 class FullRefueling(RefuelingAdd):
     id_refueling: int
 
-class RefuelingPeople(FullRefueling):
+class FullRefuelingRe(FullRefueling):
     fuel: 'FullFuel'
-    people: 'FullPeopleRe'
+    people: 'FullPeople'

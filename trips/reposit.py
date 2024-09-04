@@ -4,9 +4,13 @@ from sqlalchemy.orm import selectinload, joinedload
 from trips.models import Session, Session_real, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling
 
-from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd, \
-    FullRouteRe, RefuelingPeople
-from trips.schema import FullPoint, FuelAdd, WhereDriveAdd, RefuelingAdd
+from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
+from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd
+
+from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
+from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
+
+from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
 
 import asyncio
@@ -442,7 +446,7 @@ class DataGet:
             )
             result = await session.execute(query)
             fuel_models = result.scalars().all()
-            fuel_dto = [RefuelingPeople.model_validate(row, from_attributes=True) for row in fuel_models]
+            fuel_dto = [FullFuelRe.model_validate(row, from_attributes=True) for row in fuel_models]
             return fuel_dto
 
     @classmethod
@@ -466,18 +470,26 @@ class DataGet:
     @classmethod
     async def find_all_position(cls):
         async with Session() as session:
-            query = select(Position)
+            query = (
+                select(Position)
+                .options(selectinload(Position.peoples))
+            )
             result = await session.execute(query)
             position_models = result.scalars().all()
-            return position_models
+            position_dto = [FullPositionRe.model_validate(row, from_attributes=True) for row in position_models]
+            return position_dto
 
     @classmethod
     async def find_all_wd(cls):
         async with Session() as session:
-            query = select(WhereDrive)
+            query = (
+                select(WhereDrive)
+                .options(selectinload(WhereDrive.passengers))
+            )
             result = await session.execute(query)
             wd_models = result.scalars().all()
-            return wd_models
+            wd_dto = [FullWhereDriveRe.model_validate(row, from_attributes=True) for row in wd_models]
+            return wd_dto
 
     @classmethod
     async def find_all_people(cls):
@@ -571,7 +583,7 @@ class DataGet:
             )
             result = await session.execute(query)
             refueling_models = result.scalars().all()
-            refueling_dto = [RefuelingPeople.model_validate(row, from_attributes=True) for row in refueling_models]
+            refueling_dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in refueling_models]
             return refueling_dto
 
 
@@ -635,7 +647,7 @@ class RealDataGet:
             )
             result = await session.execute(query)
             fuel_models = result.scalars().all()
-            fuel_dto = [RefuelingPeople.model_validate(row, from_attributes=True) for row in fuel_models]
+            fuel_dto = [FullFuelRe.model_validate(row, from_attributes=True) for row in fuel_models]
             return fuel_dto
 
     @classmethod
@@ -658,18 +670,26 @@ class RealDataGet:
     @classmethod
     async def find_all_position(cls):
         async with Session_real() as session:
-            query = select(Position)
+            query = (
+                select(Position)
+                .options(selectinload(Position.peoples))
+            )
             result = await session.execute(query)
             position_models = result.scalars().all()
-            return position_models
+            position_dto = [FullPositionRe.model_validate(row, from_attributes=True) for row in position_models]
+            return position_dto
 
     @classmethod
     async def find_all_wd(cls):
         async with Session_real() as session:
-            query = select(WhereDrive)
+            query = (
+                select(WhereDrive)
+                .options(selectinload(WhereDrive.passengers))
+            )
             result = await session.execute(query)
             wd_models = result.scalars().all()
-            return wd_models
+            wd_dto = [FullWhereDriveRe.model_validate(row, from_attributes=True) for row in wd_models]
+            return wd_dto
 
     @classmethod
     async def find_all_people(cls):

@@ -11,6 +11,8 @@ from starlette.staticfiles import StaticFiles
 from trips.router import router_point as point, router_route as route, router_car as car
 from trips.router import router_car_fuel as car_fuel, router_people as people, router_position as position
 from trips.router import router_driver as driver, router_passenger as passenger, router_refueling as refueling
+from trips.router import router_fuel as fuel, router_wd as wd
+
 from trips.pages.router import router_page
 
 
@@ -31,6 +33,8 @@ app_route.mount('/trips/static/css', StaticFiles(directory='trips/static/css'), 
 app_route.include_router(point)
 app_route.include_router(route)
 app_route.include_router(car)
+app_route.include_router(fuel)
+app_route.include_router(wd)
 app_route.include_router(car_fuel)
 app_route.include_router(position)
 app_route.include_router(people)

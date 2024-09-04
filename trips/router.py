@@ -30,7 +30,7 @@ async def add_point(data: PointAdd = Body()):
 
 
 @router_point.post('/real/')
-async def add_point(data: PointAdd = Body()):
+async def add_point(data: Annotated[PointAdd, Depends()]):
     point_data = await RealDataLoads.add_point(data)
     return {"message": f"{point_data['name_point']}, добавлено в базу"}
 

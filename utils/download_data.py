@@ -141,6 +141,7 @@ async def download_all():
             dict_temp['fields']['id_refueling'] = i.id_refueling
             dict_temp['fields']['fuel'] = i.id_fuel
             dict_temp['fields']['people'] = i.id_people
+            dict_temp['fields']['quantity'] = i.quantity
             dict_temp['fields']['date'] = str(i.date_refueling)
             all_data.append(dict_temp)
 

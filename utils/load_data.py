@@ -109,6 +109,7 @@ async def load_db(data_trans):
                 id_refueling=record['fields']['id_refueling'],
                 id_fuel=record['fields']['fuel'],
                 id_people=record['fields']['people'],
+                quantity=record['fields']['quantity'],
                 date_refueling=date_format)
             session.add(refueling)
             await session.commit()

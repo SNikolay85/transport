@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, UniqueConstraint
+from sqlalchemy import Float, String, ForeignKey, MetaData, Date, DateTime, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped
 from sqlalchemy.sql import func
 from datetime import datetime, date
@@ -249,6 +249,7 @@ class Refueling(Base):
     id_refueling: Mapped[intpk]
     id_fuel: Mapped[fuel_fk]
     id_people: Mapped[people_fk]
+    quantity: Mapped[float] = mapped_column(Float(precision=2, asdecimal=2,decimal_return_scale=2), nullable=False)
     date_refueling: Mapped[date_trip]
 
     created_on: Mapped[created_on]
@@ -257,7 +258,7 @@ class Refueling(Base):
     fuel: Mapped['Fuel'] = relationship(back_populates='refuelings')
     people: Mapped['People'] = relationship(back_populates='refuelings')
 
-    repr_cols_num = 4
+    repr_cols_num = 5
     repr_cols = tuple('created_on', )
 
 

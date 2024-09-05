@@ -162,6 +162,7 @@ class FullRouteRe(FullRoute):
 class RefuelingAdd(BaseModel):
     id_fuel: int
     id_people: int
+    quantity: float
     date_refueling: date
 
 class FullRefueling(RefuelingAdd):

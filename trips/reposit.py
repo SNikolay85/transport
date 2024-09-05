@@ -96,7 +96,7 @@ class RealDataLoads:
             return {
                 "id_car_fuel": car_fuel.id_car_fuel,
                 "id_car": car_fuel.id_car,
-                "fuel": car_fuel.fuel
+                "fuel": car_fuel.id_fuel
             }
 
     @classmethod
@@ -197,6 +197,7 @@ class RealDataLoads:
                 "id_refueling": refueling.id_refueling,
                 "id_fuel": refueling.id_fuel,
                 "id_people": refueling.id_people,
+                "quantity": refueling.quantity,
                 "date_refueling": refueling.date_refueling
             }
 
@@ -281,7 +282,7 @@ class DataLoads:
             return {
                 "id_car_fuel": car_fuel.id_car_fuel,
                 "id_car": car_fuel.id_car,
-                "fuel": car_fuel.fuel
+                "fuel": car_fuel.id_fuel
             }
 
     @classmethod
@@ -382,6 +383,7 @@ class DataLoads:
                 "id_refueling": refueling.id_refueling,
                 "id_fuel": refueling.id_fuel,
                 "id_people": refueling.id_people,
+                "quantity": refueling.quantity,
                 "date_refueling": refueling.date_refueling
             }
 
@@ -781,7 +783,7 @@ class RealDataGet:
             )
             result = await session.execute(query)
             refueling_models = result.scalars().all()
-            refueling_dto = [RefuelingPeople.model_validate(row, from_attributes=True) for row in refueling_models]
+            refueling_dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in refueling_models]
             return refueling_dto
 
 

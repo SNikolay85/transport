@@ -21,6 +21,8 @@ class PointAdd(BaseModel):
 
 class FullPoint(PointAdd):
     id_point: int
+    latitude: Optional[float] =  None
+    longitude: Optional[float] = None
 
 class NamePoint(BaseModel):
     id_point: int
@@ -148,10 +150,10 @@ class FullPositionRe(FullPosition):
 class RouteAdd(BaseModel):
     id_start_point: int
     id_finish_point: int
-    distance: int
 
 class FullRoute(RouteAdd):
     id_route: int
+    distance: Optional[int] = None
 
 class FullRouteRe(FullRoute):
     point_start: 'FullPoint'

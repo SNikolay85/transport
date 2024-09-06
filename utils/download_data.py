@@ -24,6 +24,8 @@ async def download_all():
             dict_temp = {'model': 'point', 'fields': {}}
             dict_temp['fields']['id_point'] = i.id_point
             dict_temp['fields']['name'] = i.name_point
+            dict_temp['fields']['latitude'] = i.latitude
+            dict_temp['fields']['longitude'] = i.longitude
             dict_temp['fields']['cost'] = i.cost
             all_data.append(dict_temp)
 

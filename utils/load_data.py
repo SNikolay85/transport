@@ -30,6 +30,8 @@ async def load_db(data_trans):
             point = Point(
                 id_point=record['fields']['id_point'],
                 name_point=record['fields']['name'],
+                latitude=record['fields']['latitude'],
+                longitude=record['fields']['longitude'],
                 cost=record['fields']['cost'])
             session.add(point)
             await session.commit()

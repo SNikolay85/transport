@@ -64,6 +64,8 @@ class Point(Base):
 
     id_point: Mapped[intpk]
     name_point: Mapped[str100] = mapped_column(unique=True)
+    latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float] = mapped_column(Float, nullable=True)
     cost: Mapped[int]
 
     created_on: Mapped[created_on]
@@ -81,7 +83,7 @@ class Point(Base):
         order_by='People.last_name.desc()'
     )
 
-    repr_cols_num = 3
+    repr_cols_num = 5
     repr_cols = tuple()
 
 

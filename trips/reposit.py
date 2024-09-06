@@ -1,3 +1,4 @@
+from config import TOKEN_ORS
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -13,33 +14,66 @@ from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
 
-import asyncio
+import requests
+from geopy.geocoders import Nominatim
+
 
 
 class RealDataLoads:
+    def matrix(locations: list):
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': 'application/json',
+            'Authorization': TOKEN_ORS
+        }
+
+        data = {"locations": [i[::-1] for i in locations], "metrics": ["distance"], "units": "m"}
+        res = requests.post(f'https://api.openrouteservice.org/v2/matrix/driving-car',
+                            headers=headers,
+                            json=data).json()
+        return res['distances'][0][1]
+
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
-        async with Session_real() as session:
+        loc = Nominatim(user_agent="GetLoc")
+        get_location = loc.geocode(data.name_point)
+        async with Session() as session:
             query_point = select(Point.id_point)
             result_point = await session.execute(query_point)
             point_models = result_point.unique().scalars().all()
-            point = Point(**(data.model_dump()), id_point=max(point_models) + 1)
+            point = Point(**(data.model_dump()), latitude=get_location.latitude, longitude=get_location.longitude,
+                          id_point=max(point_models) + 1)
             session.add(point)
             await session.flush()
             await session.commit()
             return {
                 "id_point": point.id_point,
                 "name_point": point.name_point,
-                "cost": point.cost
+                "cost": point.cost,
+                "latitude": point.latitude,
+                "longitude": point.longitude
             }
 
     @classmethod
     async def add_route(cls, data: RouteAdd) -> dict:
-        async with Session_real() as session:
+        list_geo = []
+        async with Session() as session:
+            query_start_point = select(Point).filter(Point.id_point == data.id_start_point)
+            result_qsp = await session.execute(query_start_point)
+            qsp_models = result_qsp.unique().scalars().all()
+            list_geo.append([qsp_models[0].latitude, qsp_models[0].longitude])
+
+            query_finish_point = select(Point).filter(Point.id_point == data.id_finish_point)
+            result_qfp = await session.execute(query_finish_point)
+            qfp_models = result_qfp.unique().scalars().all()
+            list_geo.append([qfp_models[0].latitude, qfp_models[0].longitude])
+
+            dist = int(DataLoads.matrix(list_geo) / 1000) + 1
+
             query_route = select(Route.id_route)
             result_route = await session.execute(query_route)
             route_models = result_route.unique().scalars().all()
-            route = Route(**(data.model_dump()), id_route=max(route_models) + 1)
+            route = Route(**(data.model_dump()), distance=dist, id_route=max(route_models) + 1)
             session.add(route)
             await session.flush()
             await session.commit()
@@ -203,29 +237,60 @@ class RealDataLoads:
 
 
 class DataLoads:
+    def matrix(locations: list):
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': 'application/json',
+            'Authorization': TOKEN_ORS
+        }
+
+        data = {"locations": [i[::-1] for i in locations], "metrics": ["distance"], "units": "m"}
+        res = requests.post(f'https://api.openrouteservice.org/v2/matrix/driving-car',
+                            headers=headers,
+                            json=data).json()
+        return res['distances'][0][1]
+
+
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
+        loc = Nominatim(user_agent="GetLoc")
+        get_location = loc.geocode(data.name_point)
         async with Session() as session:
             query_point = select(Point.id_point)
             result_point = await session.execute(query_point)
             point_models = result_point.unique().scalars().all()
-            point = Point(**(data.model_dump()), id_point=max(point_models) + 1)
+            point = Point(**(data.model_dump()), latitude=get_location.latitude, longitude=get_location.longitude, id_point=max(point_models) + 1)
             session.add(point)
             await session.flush()
             await session.commit()
             return {
                 "id_point": point.id_point,
                 "name_point": point.name_point,
-                "cost": point.cost
+                "cost": point.cost,
+                "latitude": point.latitude,
+                "longitude": point.longitude
             }
 
     @classmethod
     async def add_route(cls, data: RouteAdd) -> dict:
+        list_geo = []
         async with Session() as session:
+            query_start_point = select(Point).filter(Point.id_point == data.id_start_point)
+            result_qsp = await session.execute(query_start_point)
+            qsp_models = result_qsp.unique().scalars().all()
+            list_geo.append([qsp_models[0].latitude, qsp_models[0].longitude])
+
+            query_finish_point = select(Point).filter(Point.id_point == data.id_finish_point)
+            result_qfp = await session.execute(query_finish_point)
+            qfp_models = result_qfp.unique().scalars().all()
+            list_geo.append([qfp_models[0].latitude, qfp_models[0].longitude])
+
+            dist = int(DataLoads.matrix(list_geo) / 1000) + 1
+
             query_route = select(Route.id_route)
             result_route = await session.execute(query_route)
             route_models = result_route.unique().scalars().all()
-            route = Route(**(data.model_dump()), id_route=max(route_models) + 1)
+            route = Route(**(data.model_dump()), distance=dist, id_route=max(route_models) + 1)
             session.add(route)
             await session.flush()
             await session.commit()

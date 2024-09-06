@@ -23,11 +23,14 @@ router_passenger = APIRouter(prefix='/passenger', tags=['Passenger'])
 router_refueling = APIRouter(prefix='/refueling', tags=['Refueling'])
 
 
+# @router_point.post('/')
+# async def add_point(data: PointAdd = Body()):
+#     point_data = await DataLoads.add_point(data)
+#     return {"message": f"{point_data['name_point']}, добавлено в базу"}
 @router_point.post('/')
-async def add_point(data: PointAdd = Body()):
+async def add_point(data: Annotated[PointAdd, Depends()]):
     point_data = await DataLoads.add_point(data)
     return {"message": f"{point_data['name_point']}, добавлено в базу"}
-
 
 @router_point.post('/real/')
 async def add_point(data: Annotated[PointAdd, Depends()]):
@@ -78,6 +81,7 @@ async def add_route(route: Annotated[RouteAdd, Depends()]):
 @router_route.post('/real/')
 async def add_route(route: Annotated[RouteAdd, Depends()]):
     route_data = await RealDataLoads.add_route(route)
+    print(route_data)
     return {"message": f"Маршрут {route_data['id_start_point']} - {route_data['id_finish_point']} c расстоянием {route_data['distance']}, добавлено в базу"}
 
 

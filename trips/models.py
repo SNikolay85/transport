@@ -11,15 +11,13 @@ from typing_extensions import Annotated
 from config import PG_DB, REAL_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
 # connection for the test base
-PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+#PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 # connection for the real base
-PG_DSN_REAL = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
+PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
 
 engine = create_async_engine(PG_DSN, echo=True)
-engine_real = create_async_engine(PG_DSN_REAL, echo=True)
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
-Session_real = async_sessionmaker(engine_real, expire_on_commit=False)
 
 my_metadata = MetaData()
 

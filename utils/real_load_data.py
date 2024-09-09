@@ -5,7 +5,7 @@ import os
 import json
 
 from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel, WhereDrive, Refueling
-from trips.models import create_tables, delete_tables, Session_real
+from trips.models import create_tables, delete_tables, Session
 
 
 current = os.getcwd()
@@ -16,7 +16,7 @@ with open(full_path, 'r', encoding='utf-8') as file:
     data_base = json.load(file)
 
 
-session = Session_real()
+session = Session()
 
 
 async def reboot_tables():

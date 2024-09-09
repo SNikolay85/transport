@@ -21,6 +21,13 @@ from fastapi.responses import FileResponse
 
 
 
+def my_round(num):
+    return num if num % 5 == 0 else num + (5 - (num % 5))
+
+
+
+print(my_round(1))
+
 app = FastAPI()
 
 

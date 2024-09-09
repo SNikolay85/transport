@@ -3,6 +3,10 @@ import requests
 from geopy.geocoders import Nominatim
 from config import TOKEN_ORS
 
+
+def my_round(num):
+    return num if num % 5 == 0 else num + (5 - (num % 5))
+
 # получение координат по названию
 def get_geo_position(name: str):
     loc = Nominatim(user_agent="GetLoc")
@@ -37,7 +41,9 @@ def descriptiom(address1, address2, la1, lon1, la2, lon2):
 
 
 name_address_start = 'Завод'
-name_address_finish = 'Тольятти, Офицерская, 9'
+name_address_finish = 'Тольятти, Ушакова, 52'
+
+
 
 if name_address_start == 'Завод':
     finish_geo_position = get_geo_position(name_address_finish)
@@ -56,5 +62,5 @@ else:
 
 
 if __name__ == '__main__':
-    print(f'Расстояние между {name_address_start} - {name_address_finish}: {int((matrix(route) / 1000)) + 1} км')
+    print(f'Расстояние между {name_address_start} - {name_address_finish}: {my_round(int((matrix(route) / 1000)))} км')
 

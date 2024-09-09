@@ -3,7 +3,7 @@ import asyncio
 import os
 import json
 
-from trips.models import Session_real, Point, Route, Fuel, Car, CarFuel, Position
+from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling
 
 from trips.schema import FullPoint, FullRoute, FullFuel, FullWhereDrive, FullPosition, FullPeople
@@ -15,7 +15,7 @@ full_path = os.path.join(current, file_name_base)
 
 async def download_all():
     all_data = []
-    async with Session_real() as session:
+    async with Session() as session:
         query_point = select(Point)
         result_point = await session.execute(query_point)
         point_models = result_point.unique().scalars().all()

@@ -11,7 +11,8 @@ from starlette.staticfiles import StaticFiles
 from trips.router import router_point as point, router_route as route, router_car as car
 from trips.router import router_car_fuel as car_fuel, router_people as people, router_position as position
 from trips.router import router_driver as driver, router_passenger as passenger, router_refueling as refueling
-from trips.router import router_fuel as fuel, router_wd as wd
+from trips.router import router_fuel as fuel, router_wd as wd, router_organization as organization
+from trips.router import router_other_route as other_route
 
 from trips.pages.router import router_page
 
@@ -38,8 +39,10 @@ app_route.include_router(wd)
 app_route.include_router(car_fuel)
 app_route.include_router(position)
 app_route.include_router(people)
+app_route.include_router(organization)
 app_route.include_router(driver)
 app_route.include_router(passenger)
+app_route.include_router(other_route)
 app_route.include_router(refueling)
 app_route.include_router(router_page)
 

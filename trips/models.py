@@ -11,15 +11,13 @@ from typing_extensions import Annotated
 from config import PG_DB, REAL_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
 # connection for the test base
-PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+#PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
 # connection for the real base
-PG_DSN_REAL = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
+PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
 
 engine = create_async_engine(PG_DSN, echo=True)
-engine_real = create_async_engine(PG_DSN_REAL, echo=True)
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
-Session_real = async_sessionmaker(engine_real, expire_on_commit=False)
 
 my_metadata = MetaData()
 
@@ -30,6 +28,7 @@ fuel_fk = Annotated[int, mapped_column(ForeignKey('fuel.id_fuel', ondelete="CASC
 wd_fk = Annotated[int, mapped_column(ForeignKey('where_drive.id_wd', ondelete="CASCADE"))]
 position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position', ondelete="CASCADE"))]
 people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people', ondelete="CASCADE"))]
+organization_fk = Annotated[int, mapped_column(ForeignKey('organization.id_organization', ondelete="CASCADE"))]
 driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver', ondelete="CASCADE"))]
 str100 = Annotated[str, 100]
 str20 = Annotated[str, 20]
@@ -76,6 +75,7 @@ class Point(Base):
     finish_point: Mapped[list['Route']] = relationship(back_populates='point_finish',
                                                        foreign_keys='[Route.id_finish_point]')
     peoples: Mapped[list['People']] = relationship(back_populates='point')
+    organizations: Mapped[list['Organization']] = relationship(back_populates='point')
 
     peoples_driving_licence: Mapped[list['People']] = relationship(
         back_populates='point',
@@ -178,6 +178,7 @@ class WhereDrive(Base):
     updated_on: Mapped[updated_on]
 
     passengers: Mapped[list['Passenger']] = relationship(back_populates='wd')
+    other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='wd')
 
 
 class People(Base):
@@ -206,6 +207,24 @@ class People(Base):
     repr_cols = tuple()
 
 
+class Organization(Base):
+    __tablename__ = 'organization'
+
+    id_organization: Mapped[intpk]
+    name_organization: Mapped[str50]
+    id_point: Mapped[point_fk]
+    __table_args__ = (UniqueConstraint('name_organization', 'id_point', name='organization_uc'),)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    point: Mapped['Point'] = relationship(back_populates='organizations')
+    other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='organization')
+
+    repr_cols_num = 3
+    repr_cols = tuple()
+
+
 class Driver(Base):
     __tablename__ = 'driver'
 
@@ -219,6 +238,7 @@ class Driver(Base):
 
     people: Mapped['People'] = relationship(back_populates='drivers')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='driver')
+    other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='driver')
 
     repr_cols_num = 3
     repr_cols = tuple('created_on', )
@@ -240,6 +260,27 @@ class Passenger(Base):
     people: Mapped['People'] = relationship(back_populates='passengers')
     driver: Mapped['Driver'] = relationship(back_populates='passengers')
     wd: Mapped['WhereDrive'] = relationship(back_populates='passengers')
+
+    repr_cols_num = 5
+    repr_cols = tuple('created_on', )
+
+
+class OtherRoute(Base):
+    __tablename__ = 'other_route'
+
+    id_other_route: Mapped[intpk]
+    order: Mapped[int]
+    id_organization: Mapped[organization_fk]
+    id_driver: Mapped[driver_fk]
+    where_drive: Mapped[wd_fk]
+    __table_args__ = (UniqueConstraint('id_organization', 'id_driver', 'where_drive', name='other_route_uc'),)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    organization: Mapped['Organization'] = relationship(back_populates='other_routes')
+    driver: Mapped['Driver'] = relationship(back_populates='other_routes')
+    wd: Mapped['WhereDrive'] = relationship(back_populates='other_routes')
 
     repr_cols_num = 5
     repr_cols = tuple('created_on', )

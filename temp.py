@@ -1,7 +1,6 @@
 import asyncio
 from pprint import pprint
 from typing import Optional
-from config import TOKEN_ORS
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select
@@ -20,71 +19,14 @@ from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullD
 from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
 
-import requests
 
 
-from geopy.geocoders import Nominatim
-
-def get_geo_position(name: str):
-    loc = Nominatim(user_agent="GetLoc")
-    get_loc = loc.geocode(name)
-    print(f' Полный адрес: {get_loc.address}')
-    return get_loc.latitude, get_loc.longitude
-
-name_address = 'Новосемейкино'
-# result_geo_position = get_geo_position(name_address)
-# print(f' Для названия: {name_address} \n "latitude": {result_geo_position[0]}, "longitude": {result_geo_position[1]}')
-
-def get_name_address(geo_position: str):
-    loc = Nominatim(user_agent="GetLoc")
-    loc_name = loc.reverse(geo_position)
-    return loc_name.address
-
-home_geo = '53.373890, 50.354050'
-job_geo = '53.389813, 50.431804'
-
-# result = get_name_address(home_geo)
-#
-# print(f'Для координат {home_geo} \n адрес: {result}')
+def my_round(num):
+    return num if num % 5 == 0 else num + (5 - (num % 5))
 
 
 
-route = [[53.389813, 50.431804], [53.25028555, 50.48563977922581]]
-
-
-
-
-def geo_pos(name: str):
-    headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        #'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-        'Accept': 'application/json',
-        'Authorization': TOKEN_ORS
-    }
-
-    data = {"text": name}
-    res = requests.get(f'https://api.openrouteservice.org/geocode/search',
-                        headers=headers,
-                        json=data).json()
-    return res
-
-#print(geo_pos(name_address))
-
-def matrix(locations: list):
-    headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-        'Authorization': TOKEN_ORS
-    }
-
-    data = {"locations":[i[::-1] for i in locations],"metrics":["distance","duration"],"units":"m"}
-    res = requests.post(f'https://api.openrouteservice.org/v2/matrix/driving-car',
-                        headers=headers,
-                        json=data).json()
-    return res['distances'][0][1]
-
-#print(matrix(route) / 1000)
-
+print(my_round(1))
 
 app = FastAPI()
 

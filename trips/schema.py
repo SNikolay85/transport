@@ -78,7 +78,6 @@ class PeopleAdd(BaseModel):
     id_position: int
     driving_licence: Optional[str]
 
-
 class FullPeople(PeopleAdd):
     id_people: int
 
@@ -91,6 +90,19 @@ class FullPeRe(FullPeople):
     point: 'FullPoint'
     position: 'FullPosition'
     cars: list['FullCar']
+
+
+# --------------------------
+# schemes for model Organization
+class OrganizationAdd(BaseModel):
+    name_organization: str
+    id_point: int
+
+class FullOrganization(OrganizationAdd):
+    id_organization: int
+
+class FullOrganizationRe(FullOrganization):
+    point: 'PointMin'
 
 # --------------------------
 # schemes for model Car
@@ -131,6 +143,23 @@ class FullPassenger(PassengerAdd):
 
 class FullPassengerRe(FullPassenger):
     people: 'FullPeople'
+    driver: 'FullDriverRe'
+    wd: 'FullWhereDrive'
+
+
+# --------------------------
+# schemes for model OtherRoute
+class OtherRouteAdd(BaseModel):
+    order: int
+    id_organization: int
+    id_driver: int
+    where_drive: int
+
+class FullOtherRoute(OtherRouteAdd):
+    id_other_route: int
+
+class FullOtherRouteRe(FullOtherRoute):
+    organization: 'FullOrganizationRe'
     driver: 'FullDriverRe'
     wd: 'FullWhereDrive'
 

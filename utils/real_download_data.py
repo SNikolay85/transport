@@ -3,11 +3,12 @@ import asyncio
 import os
 import json
 
-from trips.models import Session_real, Point, Route, Fuel, Car, CarFuel, Position
-from trips.models import WhereDrive, People, Driver, Passenger, Refueling
+from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
+from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute
 
 from trips.schema import FullPoint, FullRoute, FullFuel, FullWhereDrive, FullPosition, FullPeople
 from trips.schema import FullCar, FullCarFuel, FullDriver, FullPassenger, FullRefueling
+from trips.schema import FullOrganization, FullOtherRoute
 
 current = os.getcwd()
 file_name_base = '../real_download_data.json'
@@ -15,7 +16,7 @@ full_path = os.path.join(current, file_name_base)
 
 async def download_all():
     all_data = []
-    async with Session_real() as session:
+    async with Session() as session:
         query_point = select(Point)
         result_point = await session.execute(query_point)
         point_models = result_point.unique().scalars().all()
@@ -86,6 +87,17 @@ async def download_all():
             dict_temp['fields']['driving_licence'] = i.driving_licence
             all_data.append(dict_temp)
 
+        query_organization = select(Organization)
+        result_organization = await session.execute(query_organization)
+        organization_models = result_organization.unique().scalars().all()
+        organization_dto = [FullOrganization.model_validate(row, from_attributes=True) for row in organization_models]
+        for i in organization_dto:
+            dict_temp = {'model': 'organization', 'fields': {}}
+            dict_temp['fields']['id_organization'] = i.id_organization
+            dict_temp['fields']['name_organization'] = i.name_organization
+            dict_temp['fields']['id_point'] = i.id_point
+            all_data.append(dict_temp)
+
         query_car = select(Car)
         result_car = await session.execute(query_car)
         car_models = result_car.unique().scalars().all()
@@ -130,6 +142,19 @@ async def download_all():
             dict_temp['fields']['id_passenger'] = i.id_passenger
             dict_temp['fields']['order'] = i.order
             dict_temp['fields']['passenger'] = i.id_people
+            dict_temp['fields']['driver'] = i.id_driver
+            dict_temp['fields']['WD'] = i.where_drive
+            all_data.append(dict_temp)
+
+        query_other_route = select(OtherRoute)
+        result_other_route = await session.execute(query_other_route)
+        other_route_models = result_other_route.unique().scalars().all()
+        other_route_dto = [FullOtherRoute.model_validate(row, from_attributes=True) for row in other_route_models]
+        for i in other_route_dto:
+            dict_temp = {'model': 'other_route', 'fields': {}}
+            dict_temp['fields']['id_other_route'] = i.id_other_route
+            dict_temp['fields']['order'] = i.order
+            dict_temp['fields']['organization'] = i.id_organization
             dict_temp['fields']['driver'] = i.id_driver
             dict_temp['fields']['WD'] = i.where_drive
             all_data.append(dict_temp)

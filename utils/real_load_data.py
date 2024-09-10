@@ -4,8 +4,9 @@ from datetime import datetime
 import os
 import json
 
-from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel, WhereDrive, Refueling
-from trips.models import create_tables, delete_tables, Session_real
+from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel
+from trips.models import WhereDrive, Refueling, Organization, OtherRoute
+from trips.models import create_tables, delete_tables, Session
 
 
 current = os.getcwd()
@@ -16,7 +17,7 @@ with open(full_path, 'r', encoding='utf-8') as file:
     data_base = json.load(file)
 
 
-session = Session_real()
+session = Session()
 
 
 async def reboot_tables():
@@ -88,6 +89,13 @@ async def load_db(data_trans):
                 driving_licence=record['fields'].setdefault('driving_licence', None))
             session.add(people)
             await session.commit()
+        elif record['model'] == 'organization':
+            organization = Organization(
+                id_organization=record['fields']['id_organization'],
+                name_organization=record['fields']['name_organization'],
+                id_point=record['fields']['id_point'])
+            session.add(organization)
+            await session.commit()
         elif record['model'] == 'drivers':
             date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
             drivers = Driver(
@@ -104,6 +112,15 @@ async def load_db(data_trans):
                 id_driver=record['fields']['driver'],
                 where_drive=record['fields']['WD'])
             session.add(passenger)
+            await session.commit()
+        elif record['model'] == 'other_route':
+            other_route = OtherRoute(
+                id_other_route=record['fields']['id_other_route'],
+                order=record['fields']['order'],
+                id_organization=record['fields']['organization'],
+                id_driver=record['fields']['driver'],
+                where_drive=record['fields']['WD'])
+            session.add(other_route)
             await session.commit()
         elif record['model'] == 'refueling':
             date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()

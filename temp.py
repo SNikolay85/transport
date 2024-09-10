@@ -31,9 +31,9 @@ def get_geo_position(name: str):
     print(f' Полный адрес: {get_loc.address}')
     return get_loc.latitude, get_loc.longitude
 
-name_address = 'Тольятти Старый город'
-result_geo_position = get_geo_position(name_address)
-print(f' Для названия: {name_address} \n "latitude": {result_geo_position[0]}, "longitude": {result_geo_position[1]}')
+name_address = 'Новосемейкино'
+# result_geo_position = get_geo_position(name_address)
+# print(f' Для названия: {name_address} \n "latitude": {result_geo_position[0]}, "longitude": {result_geo_position[1]}')
 
 def get_name_address(geo_position: str):
     loc = Nominatim(user_agent="GetLoc")
@@ -52,6 +52,24 @@ job_geo = '53.389813, 50.431804'
 route = [[53.389813, 50.431804], [53.25028555, 50.48563977922581]]
 
 
+
+
+def geo_pos(name: str):
+    headers = {
+        'Content-Type': 'application/json; charset=utf-8',
+        #'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+        'Accept': 'application/json',
+        'Authorization': TOKEN_ORS
+    }
+
+    data = {"text": name}
+    res = requests.get(f'https://api.openrouteservice.org/geocode/search',
+                        headers=headers,
+                        json=data).json()
+    return res
+
+#print(geo_pos(name_address))
+
 def matrix(locations: list):
     headers = {
         'Content-Type': 'application/json; charset=utf-8',
@@ -65,7 +83,7 @@ def matrix(locations: list):
                         json=data).json()
     return res['distances'][0][1]
 
-print(matrix(route) / 1000)
+#print(matrix(route) / 1000)
 
 
 app = FastAPI()

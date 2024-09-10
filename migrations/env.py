@@ -14,8 +14,8 @@ config = context.config
 
 section = config.config_ini_section
 config.set_section_option(section, "PG_HOST", PG_HOST)
-#config.set_section_option(section, "PG_DB", PG_DB)
-config.set_section_option(section, "REAL_DB", REAL_DB)
+config.set_section_option(section, "PG_DB", PG_DB)
+#config.set_section_option(section, "REAL_DB", REAL_DB)
 config.set_section_option(section, "PG_PORT", PG_PORT)
 config.set_section_option(section, "PG_USER", PG_USER)
 config.set_section_option(section, "PG_PASSWORD", PG_PASSWORD)

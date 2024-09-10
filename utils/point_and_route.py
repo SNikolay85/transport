@@ -41,9 +41,9 @@ def descriptiom(address1, address2, la1, lon1, la2, lon2):
 
 
 name_address_start = 'Завод'
-name_address_finish = 'Тольятти, Ушакова, 52'
+name_address_finish = 'Волжский, улица Максима Горького, 76'
 
-
+print(get_name_address('53.306976, 50.291328'))
 
 if name_address_start == 'Завод':
     finish_geo_position = get_geo_position(name_address_finish)

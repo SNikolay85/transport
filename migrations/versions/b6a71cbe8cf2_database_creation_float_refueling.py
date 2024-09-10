@@ -36,9 +36,7 @@ def downgrade() -> None:
     op.alter_column(
         "refueling",
         "quantity",
-        existing_type=sa.Float(
-            precision=2, asdecimal=2, decimal_return_scale=2
-        ),
+        existing_type=sa.Float(precision=2, asdecimal=2, decimal_return_scale=2),
         type_=sa.REAL(),
         existing_nullable=False,
     )

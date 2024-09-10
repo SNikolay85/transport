@@ -5,8 +5,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Body
 from fastapi_cache.decorator import cache
 
-from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd
-from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd
+from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
+from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
 
 from trips.reposit import DataLoads, DataGet
 
@@ -18,8 +18,10 @@ router_car_fuel = APIRouter(prefix='/car_fuel', tags=['CarFuel'])
 router_position = APIRouter(prefix='/position', tags=['Position'])
 router_wd = APIRouter(prefix='/wd', tags=['WhereDrive'])
 router_people = APIRouter(prefix='/people', tags=['People'])
+router_organization = APIRouter(prefix='/organization', tags=['Organization'])
 router_driver = APIRouter(prefix='/driver', tags=['Driver'])
 router_passenger = APIRouter(prefix='/passenger', tags=['Passenger'])
+router_other_route = APIRouter(prefix='/other_route', tags=['OtherRoute'])
 router_refueling = APIRouter(prefix='/refueling', tags=['Refueling'])
 
 
@@ -157,6 +159,17 @@ async def get_user(user_id: int):
     user = await DataGet.find_user(user_id)
     return {'user': user}
 
+@router_organization.post('/')
+async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
+    organization_data = await DataLoads.add_organization(organization)
+    return organization_data
+
+
+@router_organization.get('/')
+async def get_organization():
+    organizations = await DataGet.find_all_organization()
+    return {'organizations': organizations}
+
 
 @router_driver.post('/')
 async def add_driver(driver: Annotated[DriverAdd, Depends()]):
@@ -187,6 +200,16 @@ async def get_passenger():
     passengers = await DataGet.find_all_passengers()
     return {'passengers': passengers}
 
+@router_other_route.post('/')
+async def add_other_route(other_route: Annotated[OtherRouteAdd, Depends()]):
+    other_route_data = await DataLoads.add_other_route(other_route)
+    return other_route_data
+
+
+@router_other_route.get('/')
+async def get_other_route():
+    other_routes = await DataGet.find_all_other_route()
+    return {'other_routes': other_routes}
 
 @router_refueling.post('/')
 async def add_refueling(refueling: Annotated[RefuelingAdd, Depends()]):

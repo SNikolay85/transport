@@ -2,17 +2,17 @@ from config import TOKEN_ORS
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload, joinedload
 
-from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position
-from trips.models import WhereDrive, People, Driver, Passenger, Refueling
+from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
+from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
-from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd
+from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
 
 from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
-from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
+from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
 
-from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe
-from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
+from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
+from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
 
 import requests
 from geopy.geocoders import Nominatim
@@ -192,6 +192,22 @@ class DataLoads:
             }
 
     @classmethod
+    async def add_organization(cls, data: OrganizationAdd) -> dict:
+        async with Session() as session:
+            query_organization = select(Organization.id_organization)
+            result_organization = await session.execute(query_organization)
+            organization_models = result_organization.unique().scalars().all()
+            organization = Organization(**(data.model_dump()), id_organization=max(organization_models) + 1)
+            session.add(organization)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_organization": organization.id_organization,
+                "name_organization": organization.name_organization,
+                "id_point": organization.id_point
+            }
+
+    @classmethod
     async def add_driver(cls, data: DriverAdd) -> dict:
         async with Session() as session:
             query_driver = select(Driver.id_driver)
@@ -223,6 +239,24 @@ class DataLoads:
                 "id_people": passenqer.id_people,
                 "id_driver": passenqer.id_driver,
                 "where_drive": passenqer.where_drive
+            }
+
+    @classmethod
+    async def add_other_route(cls, data: OtherRouteAdd) -> dict:
+        async with Session() as session:
+            query_other_route = select(OtherRoute.id_other_route)
+            result_other_route = await session.execute(query_other_route)
+            other_route_models = result_other_route.unique().scalars().all()
+            other_route = OtherRoute(**(data.model_dump()), id_other_route=max(other_route_models) + 1)
+            session.add(other_route)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_other_route": other_route.id_other_route,
+                "order": other_route.order,
+                "id_organization": other_route.id_organization,
+                "id_driver": other_route.id_driver,
+                "where_drive": other_route.where_drive
             }
 
     @classmethod
@@ -352,18 +386,30 @@ class DataGet:
 
     @classmethod
     async def find_all_people(cls):
-        async with (Session() as session):
+        async with Session() as session:
             query = (
                 select(People)
                 .options(joinedload(People.point))
                 .options(joinedload(People.position))
                 .options(selectinload(People.cars))
-                .limit(4)
+                .limit(20)
             )
             result = await session.execute(query)
             people_models = result.unique().scalars().all()
             people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
             return people_dto
+
+    @classmethod
+    async def find_all_organization(cls):
+        async with Session() as session:
+            query = (
+                select(Organization)
+                .options(joinedload(Organization.point))
+            )
+            result = await session.execute(query)
+            organization_models = result.unique().scalars().all()
+            organization_dto = [FullOrganizationRe.model_validate(row, from_attributes=True) for row in organization_models]
+            return organization_dto
 
     @classmethod
     async def find_user(cls, user_id: int):
@@ -432,6 +478,18 @@ class DataGet:
             result = await session.execute(query)
             passenger_models = result.scalars().all()
             return passenger_models
+
+    @classmethod
+    async def find_all_other_route(cls):
+        async with Session() as session:
+            query = (
+                select(OtherRoute)
+                .options(joinedload(OtherRoute.organization), joinedload(OtherRoute.driver), joinedload(OtherRoute.wd))
+            )
+            result = await session.execute(query)
+            other_route_models = result.scalars().all()
+            other_route_dto = [FullOtherRouteRe.model_validate(row, from_attributes=True) for row in other_route_models]
+            return other_route_dto
 
     @classmethod
     async def find_all_refuelings(cls):

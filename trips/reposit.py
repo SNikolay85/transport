@@ -13,7 +13,7 @@ from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
-from trips.schema import FullPassengerRe
+from trips.schema import FullPassengerRe, FullPassengerDriverRe
 
 import requests
 from geopy.geocoders import Nominatim
@@ -287,6 +287,28 @@ class DataLoads:
 
 class DataGet:
     @staticmethod
+    async def list_id_routes(trip):
+        async with Session() as session:
+            id_trip = []
+            for i in range(len(trip) - 1):
+                a, b = trip[i], trip[i + 1]
+                rrr = await session.execute(select(Route).filter(Route.id_start_point == int(a),
+                                                      Route.id_finish_point == int(b)))
+                one_way = rrr.unique().scalars().first()
+                eee = await session.execute(select(Route).filter(Route.id_start_point == int(b),
+                                                        Route.id_finish_point == int(a)))
+                other_way = eee.unique().scalars().first()
+                if one_way is None:
+                    id_trip.append(other_way.id_route)
+                else:
+                    id_trip.append(one_way.id_route)
+            route_all = 0
+            for i in id_trip:
+                ggg = await session.execute(select(Route).filter(Route.id_route == int(i)))
+                route_all += ggg.unique().scalars().first().distance
+            return route_all
+
+    @staticmethod
     async def all_name_point():
         async with Session() as session:
             query = select(Point)
@@ -462,6 +484,36 @@ class DataGet:
             drivers_models = result.unique().scalars().all()
             driver_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in drivers_models]
             return driver_dto
+
+    @classmethod
+    async def find_passenger_of_driver(cls, id_driver, wd):
+        async with Session() as session:
+            query = (
+                select(Passenger)
+                .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.wd))
+                .filter(Passenger.id_driver == id_driver, Passenger.where_drive == wd)
+                .limit(10)
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            dto = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models]
+            if wd == 1:
+                list_id_point_forward = []
+                query = select(Driver.id_people).filter(Driver.id_driver == id_driver)
+                result = await session.execute(query)
+                md = result.unique().scalars().first()
+                query = select(People.id_point).filter(People.id_people == md)
+                result = await session.execute(query)
+                list_id_point_forward.append(result.unique().scalars().first())
+                list_id_point_forward.extend([i.people.id_point for i in dto])
+                query = select(Point.id_point).filter(Point.name_point == 'Завод')
+                result = await session.execute(query)
+                list_id_point_forward.append(result.unique().scalars().first())
+                ss = await DataGet.list_id_routes(list_id_point_forward)
+            else:
+                ...
+            return dto, list_id_point_forward, ss
 
 
     @classmethod

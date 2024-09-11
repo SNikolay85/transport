@@ -40,8 +40,8 @@ def descriptiom(address1, address2, la1, lon1, la2, lon2):
     return print(a), print(b)
 
 
-name_address_start = 'Завод'
-name_address_finish = 'Волжский, улица Максима Горького, 76'
+name_address_start = 'Управленческий, Сергея Лазо, 27А'
+name_address_finish = 'Новосемейкино, Советская улица, 42'
 
 print(get_name_address('53.306976, 50.291328'))
 
@@ -63,4 +63,5 @@ else:
 
 if __name__ == '__main__':
     print(f'Расстояние между {name_address_start} - {name_address_finish}: {my_round(int((matrix(route) / 1000)))} км')
+    print(f'Расстояние между {name_address_start} - {name_address_finish}: {(matrix(route) / 1000)} км')
 

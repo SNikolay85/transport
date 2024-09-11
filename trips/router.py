@@ -200,6 +200,15 @@ async def get_passenger():
     passengers = await DataGet.find_all_passengers()
     return {'passengers': passengers}
 
+@router_passenger.get('/{[id_driver, wd]}')
+async def get_passenger_of_driver(id_driver: int, wd: int):
+    pas_driver = await DataGet.find_passenger_of_driver(id_driver, wd)
+    all_distance = 100
+    return {'passenger_of_driver': pas_driver[0],
+            'distance': pas_driver[2],
+            'dfg': pas_driver[1]
+            }
+
 @router_other_route.post('/')
 async def add_other_route(other_route: Annotated[OtherRouteAdd, Depends()]):
     other_route_data = await DataLoads.add_other_route(other_route)

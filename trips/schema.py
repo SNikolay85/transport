@@ -150,6 +150,10 @@ class FullPassengerRe(FullPassenger):
     driver: 'FullDriver'
     wd: 'FullWhereDrive'
 
+class FullPassengerDriverRe(FullPassenger):
+    people: 'FullPeople'
+    wd: 'FullWhereDrive'
+
 
 # --------------------------
 # schemes for model OtherRoute

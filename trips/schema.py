@@ -78,6 +78,10 @@ class PeopleAdd(BaseModel):
     id_position: int
     driving_licence: Optional[str]
 
+class PeopleMin(BaseModel):
+    first_name: str
+    last_name: str
+
 class FullPeople(PeopleAdd):
     id_people: int
 
@@ -142,8 +146,8 @@ class FullPassenger(PassengerAdd):
     id_passenger: int
 
 class FullPassengerRe(FullPassenger):
-    people: 'FullPeople'
-    driver: 'FullDriverRe'
+    people: 'PeopleMin'
+    driver: 'FullDriver'
     wd: 'FullWhereDrive'
 
 
@@ -159,8 +163,8 @@ class FullOtherRoute(OtherRouteAdd):
     id_other_route: int
 
 class FullOtherRouteRe(FullOtherRoute):
-    organization: 'FullOrganizationRe'
-    driver: 'FullDriverRe'
+    organization: 'FullOrganization'
+    driver: 'FullDriver'
     wd: 'FullWhereDrive'
 
 # --------------------------

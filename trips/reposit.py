@@ -13,6 +13,7 @@ from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
+from trips.schema import FullPassengerRe
 
 import requests
 from geopy.geocoders import Nominatim
@@ -36,6 +37,11 @@ def matrix(locations: list):
 
 
 class DataLoads:
+    @classmethod
+    async def get_id(cls, list_id: list) -> int:
+        return max(list_id) + 1 if len(list_id) != 0 else 1
+
+
     @classmethod
     async def get_geo(cls, data: RouteAdd) -> list:
         list_geo = []
@@ -61,7 +67,7 @@ class DataLoads:
             result_point = await session.execute(query_point)
             point_models = result_point.unique().scalars().all()
             point = Point(**(data.model_dump()), latitude=get_location.latitude, longitude=get_location.longitude,
-                          id_point=max(point_models) + 1)
+                          id_point=await DataLoads.get_id(point_models))
             session.add(point)
             await session.flush()
             await session.commit()
@@ -81,7 +87,7 @@ class DataLoads:
             query_route = select(Route.id_route)
             result_route = await session.execute(query_route)
             route_models = result_route.unique().scalars().all()
-            route = Route(**(data.model_dump()), distance=dist, id_route=max(route_models) + 1)
+            route = Route(**(data.model_dump()), distance=dist, id_route=await DataLoads.get_id(route_models))
             session.add(route)
             await session.flush()
             await session.commit()
@@ -98,7 +104,7 @@ class DataLoads:
             query_fuel = select(Fuel.id_fuel)
             result_fuel = await session.execute(query_fuel)
             fuel_models = result_fuel.unique().scalars().all()
-            fuel = Fuel(**(data.model_dump()), id_fuel=max(fuel_models) + 1)
+            fuel = Fuel(**(data.model_dump()), id_fuel=await DataLoads.get_id(fuel_models))
             session.add(fuel)
             await session.flush()
             await session.commit()
@@ -113,7 +119,7 @@ class DataLoads:
             query_car = select(Car.id_car)
             result_car = await session.execute(query_car)
             car_models = result_car.unique().scalars().all()
-            car = Car(**(data.model_dump()), id_car=max(car_models) + 1)
+            car = Car(**(data.model_dump()), id_car=await DataLoads.get_id(car_models))
             session.add(car)
             await session.flush()
             await session.commit()
@@ -131,7 +137,7 @@ class DataLoads:
             query_car_fuel = select(CarFuel.id_car_fuel)
             result_car_fuel = await session.execute(query_car_fuel)
             car_fuel_models = result_car_fuel.unique().scalars().all()
-            car_fuel = CarFuel(**(data.model_dump()), id_car_fuel=max(car_fuel_models) + 1)
+            car_fuel = CarFuel(**(data.model_dump()), id_car_fuel=await DataLoads.get_id(car_fuel_models))
             session.add(car_fuel)
             await session.flush()
             await session.commit()
@@ -147,7 +153,7 @@ class DataLoads:
             query_position = select(Position.id_position)
             result_position = await session.execute(query_position)
             position_models = result_position.unique().scalars().all()
-            position = Position(**(data.model_dump()), id_position=max(position_models) + 1)
+            position = Position(**(data.model_dump()), id_position=await DataLoads.get_id(position_models))
             session.add(position)
             await session.flush()
             await session.commit()
@@ -162,7 +168,7 @@ class DataLoads:
             query_wd = select(WhereDrive.id_wd)
             result_wd = await session.execute(query_wd)
             wd_models = result_wd.unique().scalars().all()
-            wd = WhereDrive(**(data.model_dump()), id_wd=max(wd_models) + 1)
+            wd = WhereDrive(**(data.model_dump()), id_wd=await DataLoads.get_id(wd_models))
             session.add(wd)
             await session.flush()
             await session.commit()
@@ -177,7 +183,7 @@ class DataLoads:
             query_people = select(People.id_people)
             result_people = await session.execute(query_people)
             people_models = result_people.unique().scalars().all()
-            people = People(**(data.model_dump()), id_people=max(people_models) + 1)
+            people = People(**(data.model_dump()), id_people=await DataLoads.get_id(people_models))
             session.add(people)
             await session.flush()
             await session.commit()
@@ -197,7 +203,7 @@ class DataLoads:
             query_organization = select(Organization.id_organization)
             result_organization = await session.execute(query_organization)
             organization_models = result_organization.unique().scalars().all()
-            organization = Organization(**(data.model_dump()), id_organization=max(organization_models) + 1)
+            organization = Organization(**(data.model_dump()), id_organization=await DataLoads.get_id(organization_models))
             session.add(organization)
             await session.flush()
             await session.commit()
@@ -213,7 +219,7 @@ class DataLoads:
             query_driver = select(Driver.id_driver)
             result_driver = await session.execute(query_driver)
             driver_models = result_driver.unique().scalars().all()
-            driver = Driver(**(data.model_dump()), id_driver=max(driver_models) + 1)
+            driver = Driver(**(data.model_dump()), id_driver=await DataLoads.get_id(driver_models))
             session.add(driver)
             await session.flush()
             await session.commit()
@@ -229,7 +235,7 @@ class DataLoads:
             query_passenger = select(Passenger.id_passenger)
             result_passenger = await session.execute(query_passenger)
             passenger_models = result_passenger.unique().scalars().all()
-            passenqer = Passenger(**(data.model_dump()), id_passenger=max(passenger_models) + 1)
+            passenqer = Passenger(**(data.model_dump()), id_passenger=await DataLoads.get_id(passenger_models))
             session.add(passenqer)
             await session.flush()
             await session.commit()
@@ -247,7 +253,7 @@ class DataLoads:
             query_other_route = select(OtherRoute.id_other_route)
             result_other_route = await session.execute(query_other_route)
             other_route_models = result_other_route.unique().scalars().all()
-            other_route = OtherRoute(**(data.model_dump()), id_other_route=max(other_route_models) + 1)
+            other_route = OtherRoute(**(data.model_dump()), id_other_route=await DataLoads.get_id(other_route_models))
             session.add(other_route)
             await session.flush()
             await session.commit()
@@ -265,7 +271,7 @@ class DataLoads:
             query_refueling = select(Refueling.id_refueling)
             result_refueling = await session.execute(query_refueling)
             refueling_models = result_refueling.unique().scalars().all()
-            refueling = Refueling(**(data.model_dump()), id_refueling=max(refueling_models) + 1)
+            refueling = Refueling(**(data.model_dump()), id_refueling=await DataLoads.get_id(refueling_models))
             session.add(refueling)
             await session.flush()
             await session.commit()
@@ -474,10 +480,16 @@ class DataGet:
     @classmethod
     async def find_all_passengers(cls):
         async with Session() as session:
-            query = select(Passenger)
+            query = (
+                select(Passenger)
+                .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.driver))
+                .options(joinedload(Passenger.wd))
+            )
             result = await session.execute(query)
             passenger_models = result.scalars().all()
-            return passenger_models
+            passenger_dto = [FullPassengerRe.model_validate(row, from_attributes=True) for row in passenger_models]
+            return passenger_dto
 
     @classmethod
     async def find_all_other_route(cls):

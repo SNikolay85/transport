@@ -132,9 +132,9 @@ class DataGet:
 #     return people
 #
 #
-# async def get_driver():
-#     driver = await DataGet.find_all_driver()
-#     return driver
+async def get_driver():
+    driver = await DataGet.find_all_driver()
+    return driver
 #
 #
 # async def get_car():
@@ -154,4 +154,4 @@ class DataGet:
 #pprint(asyncio.run(DataGet.find_all_people()))
 #pprint(asyncio.run(DataGet.find_all_car()))
 #pprint(asyncio.run(DataGet.find_point_with_people()))
-
+pprint(asyncio.run(get_driver()))

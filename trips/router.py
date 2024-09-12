@@ -66,8 +66,13 @@ async def get_point():
 
 @router_route.post('/')
 async def add_route(route: Annotated[RouteAdd, Depends()]):
-    route_data = await DataLoads.add_route(route)
-    return {"message": f"Маршрут {route_data['id_start_point']} - {route_data['id_finish_point']} c расстоянием {route_data['distance']}, добавлено в базу"}
+    name_route = await DataGet.get_name_point(route)
+    if await DataGet.check_double(route):
+        route_data = await DataLoads.add_route(route)
+        return {"message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} c расстоянием {route_data['distance']}, добавлено в базу"}
+    else:
+        return {
+            "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} уже есть в базе"}
 
 
 @router_route.get('/')

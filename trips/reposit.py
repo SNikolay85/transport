@@ -1,5 +1,5 @@
 from config import TOKEN_ORS
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
@@ -287,25 +287,42 @@ class DataLoads:
 
 class DataGet:
     @staticmethod
+    async def check_double(data: RouteAdd):
+        async with Session() as session:
+            a, b = data.id_start_point, data.id_finish_point
+            one = await session.execute(select(Route).filter(Route.id_start_point == int(a),
+                                                             Route.id_finish_point == int(b)))
+            one_way = one.unique().scalars().first()
+            two = await session.execute(select(Route).filter(Route.id_start_point == int(b),
+                                                             Route.id_finish_point == int(a)))
+            other_way = two.unique().scalars().first()
+            if one_way is None and other_way is None:
+                return True
+            else:
+                return False
+
+    @staticmethod
     async def list_id_routes(trip):
         async with Session() as session:
             id_trip = []
             for i in range(len(trip) - 1):
                 a, b = trip[i], trip[i + 1]
-                rrr = await session.execute(select(Route).filter(Route.id_start_point == int(a),
+                query = await session.execute(select(Route).filter(Route.id_start_point == int(a),
                                                       Route.id_finish_point == int(b)))
-                one_way = rrr.unique().scalars().first()
-                eee = await session.execute(select(Route).filter(Route.id_start_point == int(b),
+                one_way = query.unique().scalars().first()
+                query = await session.execute(select(Route).filter(Route.id_start_point == int(b),
                                                         Route.id_finish_point == int(a)))
-                other_way = eee.unique().scalars().first()
+                other_way = query.unique().scalars().first()
                 if one_way is None:
                     id_trip.append(other_way.id_route)
                 else:
                     id_trip.append(one_way.id_route)
             route_all = 0
-            for i in id_trip:
-                ggg = await session.execute(select(Route).filter(Route.id_route == int(i)))
-                route_all += ggg.unique().scalars().first().distance
+            query = await session.execute(select(Route))
+            res = query.unique().scalars().all()
+            for i in res:
+                if i.id_route in id_trip:
+                    route_all += i.distance
             return route_all
 
     @staticmethod
@@ -317,6 +334,17 @@ class DataGet:
             point_dto = [NamePoint.model_validate(row, from_attributes=True) for row in point_models]
             dict_points = {int(i.id_point):i.name_point for i in point_dto}
             return dict_points
+
+    @staticmethod
+    async def get_name_point(data: RouteAdd):
+        async with Session() as session:
+            query = (
+                select(Point)
+                .filter(or_(Point.id_point == data.id_start_point, Point.id_point == data.id_finish_point))
+            )
+            result = await session.execute(query)
+            point_models = result.unique().scalars().all()
+            return point_models
 
     @staticmethod
     async def all_point():
@@ -366,7 +394,7 @@ class DataGet:
                 .options(selectinload(Fuel.refuelings))
             )
             result = await session.execute(query)
-            fuel_models = result.scalars().all()
+            fuel_models = result.unique().scalars().all()
             fuel_dto = [FullFuelRe.model_validate(row, from_attributes=True) for row in fuel_models]
             return fuel_dto
 
@@ -408,7 +436,7 @@ class DataGet:
                 .options(selectinload(WhereDrive.passengers))
             )
             result = await session.execute(query)
-            wd_models = result.scalars().all()
+            wd_models = result.unique().scalars().all()
             wd_dto = [FullWhereDriveRe.model_validate(row, from_attributes=True) for row in wd_models]
             return wd_dto
 

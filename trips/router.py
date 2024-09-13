@@ -8,7 +8,7 @@ from fastapi_cache.decorator import cache
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
 
-from trips.reposit import DataLoads, DataGet
+from trips.reposit import DataLoads, DataGet, UtilityFunction
 
 router_point = APIRouter(prefix='/point', tags=['Point'])
 router_route = APIRouter(prefix='/route', tags=['Route'])
@@ -66,8 +66,8 @@ async def get_point():
 
 @router_route.post('/')
 async def add_route(route: Annotated[RouteAdd, Depends()]):
-    name_route = await DataGet.get_name_point(route)
-    if await DataGet.check_double(route):
+    name_route = await UtilityFunction.get_name_point(route)
+    if await UtilityFunction.check_double_route(route):
         route_data = await DataLoads.add_route(route)
         return {"message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} c расстоянием {route_data['distance']}, добавлено в базу"}
     else:
@@ -208,10 +208,9 @@ async def get_passenger():
 @router_passenger.get('/{[id_driver, wd]}')
 async def get_passenger_of_driver(id_driver: int, wd: int):
     pas_driver = await DataGet.find_passenger_of_driver(id_driver, wd)
-    all_distance = 100
     return {'passenger_of_driver': pas_driver[0],
             'distance': pas_driver[2],
-            'dfg': pas_driver[1]
+            'route_of_point': pas_driver[1]
             }
 
 @router_other_route.post('/')

@@ -18,56 +18,107 @@ from trips.schema import FullPassengerRe, FullPassengerDriverRe
 import requests
 from geopy.geocoders import Nominatim
 
-def my_round(num):
-    return num if num % 5 == 0 else num + (5 - (num % 5))
 
-def matrix(locations: list):
-    headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': 'application/json',
-        'Authorization': TOKEN_ORS
-    }
+class UtilityFunction:
+    @staticmethod
+    def my_round(num):
+        return num if num % 5 == 0 else num + (5 - (num % 5))
 
-    data = {"locations": locations, "metrics": ["distance"], "units": "m"}
-    res = requests.post(f'https://api.openrouteservice.org/v2/matrix/driving-car',
-                        headers=headers,
-                        json=data).json()
-    return res['distances'][0][1]
+    @staticmethod
+    def matrix(locations: list):
+        headers = {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': 'application/json',
+            'Authorization': TOKEN_ORS
+        }
 
+        data = {"locations": locations, "metrics": ["distance"], "units": "m"}
+        res = requests.post(f'https://api.openrouteservice.org/v2/matrix/driving-car',
+                            headers=headers,
+                            json=data).json()
+        return res['distances'][0][1]
 
-
-class DataLoads:
-    @classmethod
-    async def get_id(cls, list_id: list) -> int:
+    @staticmethod
+    async def get_id(list_id: list) -> int:
         return max(list_id) + 1 if len(list_id) != 0 else 1
 
-
-    @classmethod
-    async def get_geo(cls, data: RouteAdd) -> list:
+    @staticmethod
+    async def get_geo(data: RouteAdd) -> list:
         list_geo = []
         async with Session() as session:
-            query_start_point = select(Point).filter(Point.id_point == data.id_start_point)
+            query_start_point = (
+                select(Point)
+                .filter(Point.id_point == data.id_start_point)
+            )
             result_qsp = await session.execute(query_start_point)
             qsp_models = result_qsp.unique().scalars().all()
             list_geo.append([qsp_models[0].longitude, qsp_models[0].latitude])
 
-            query_finish_point = select(Point).filter(Point.id_point == data.id_finish_point)
+            query_finish_point = (
+                select(Point)
+                .filter(Point.id_point == data.id_finish_point)
+            )
             result_qfp = await session.execute(query_finish_point)
             qfp_models = result_qfp.unique().scalars().all()
             list_geo.append([qfp_models[0].longitude, qfp_models[0].latitude])
             return list_geo
 
+    @staticmethod
+    async def check_double_route(data: RouteAdd) -> bool:
+        async with Session() as session:
+            a, b = data.id_start_point, data.id_finish_point
+            one = await session.execute(select(Route).filter(Route.id_start_point == int(a),
+                                                             Route.id_finish_point == int(b)))
+            one_way = one.unique().scalars().first()
+            two = await session.execute(select(Route).filter(Route.id_start_point == int(b),
+                                                             Route.id_finish_point == int(a)))
+            other_way = two.unique().scalars().first()
+            if one_way is None and other_way is None:
+                return True
+            else:
+                return False
 
+    @staticmethod
+    async def get_route_length(trip: list) -> int:
+        async with Session() as session:
+            id_trip = []
+            for i in range(len(trip) - 1):
+                a, b = trip[i], trip[i + 1]
+                query = await session.execute(select(Route).filter(Route.id_start_point == int(a),
+                                                      Route.id_finish_point == int(b)))
+                one_way = query.unique().scalars().first()
+                query = await session.execute(select(Route).filter(Route.id_start_point == int(b),
+                                                        Route.id_finish_point == int(a)))
+                other_way = query.unique().scalars().first()
+                if one_way is None:
+                    id_trip.append(other_way.id_route)
+                else:
+                    id_trip.append(one_way.id_route)
+            query = (await session.execute(select(Route))).unique().scalars().all()
+            return sum([i.distance for i in query if i.id_route in id_trip])
+
+    @staticmethod
+    async def get_name_point(data: RouteAdd):
+        async with Session() as session:
+            query = (
+                select(Point)
+                .filter(or_(Point.id_point == data.id_start_point, Point.id_point == data.id_finish_point))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            return models
+
+class DataLoads:
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
         loc = Nominatim(user_agent="GetLoc")
         get_location = loc.geocode(data.name_point)
         async with Session() as session:
-            query_point = select(Point.id_point)
-            result_point = await session.execute(query_point)
-            point_models = result_point.unique().scalars().all()
+            query = select(Point.id_point)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
             point = Point(**(data.model_dump()), latitude=get_location.latitude, longitude=get_location.longitude,
-                          id_point=await DataLoads.get_id(point_models))
+                          id_point=await UtilityFunction.get_id(models))
             session.add(point)
             await session.flush()
             await session.commit()
@@ -81,13 +132,13 @@ class DataLoads:
 
     @classmethod
     async def add_route(cls, data: RouteAdd) -> dict:
-        geo_route = await DataLoads.get_geo(data)
-        dist = my_round(int(matrix(geo_route) / 1000))
+        geo_route = await UtilityFunction.get_geo(data)
+        dist = UtilityFunction.my_round(int(UtilityFunction.matrix(geo_route) / 1000))
         async with Session() as session:
-            query_route = select(Route.id_route)
-            result_route = await session.execute(query_route)
-            route_models = result_route.unique().scalars().all()
-            route = Route(**(data.model_dump()), distance=dist, id_route=await DataLoads.get_id(route_models))
+            query = select(Route.id_route)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            route = Route(**(data.model_dump()), distance=dist, id_route=await UtilityFunction.get_id(models))
             session.add(route)
             await session.flush()
             await session.commit()
@@ -101,10 +152,10 @@ class DataLoads:
     @classmethod
     async def add_fuel(cls, data: FuelAdd) -> dict:
         async with Session() as session:
-            query_fuel = select(Fuel.id_fuel)
-            result_fuel = await session.execute(query_fuel)
-            fuel_models = result_fuel.unique().scalars().all()
-            fuel = Fuel(**(data.model_dump()), id_fuel=await DataLoads.get_id(fuel_models))
+            query = select(Fuel.id_fuel)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            fuel = Fuel(**(data.model_dump()), id_fuel=await UtilityFunction.get_id(models))
             session.add(fuel)
             await session.flush()
             await session.commit()
@@ -116,10 +167,10 @@ class DataLoads:
     @classmethod
     async def add_car(cls, data: CarAdd) -> dict:
         async with Session() as session:
-            query_car = select(Car.id_car)
-            result_car = await session.execute(query_car)
-            car_models = result_car.unique().scalars().all()
-            car = Car(**(data.model_dump()), id_car=await DataLoads.get_id(car_models))
+            query = select(Car.id_car)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            car = Car(**(data.model_dump()), id_car=await UtilityFunction.get_id(models))
             session.add(car)
             await session.flush()
             await session.commit()
@@ -134,10 +185,10 @@ class DataLoads:
     @classmethod
     async def add_car_fuel(cls, data: CarFuelAdd) -> dict:
         async with Session() as session:
-            query_car_fuel = select(CarFuel.id_car_fuel)
-            result_car_fuel = await session.execute(query_car_fuel)
-            car_fuel_models = result_car_fuel.unique().scalars().all()
-            car_fuel = CarFuel(**(data.model_dump()), id_car_fuel=await DataLoads.get_id(car_fuel_models))
+            query = select(CarFuel.id_car_fuel)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            car_fuel = CarFuel(**(data.model_dump()), id_car_fuel=await UtilityFunction.get_id(models))
             session.add(car_fuel)
             await session.flush()
             await session.commit()
@@ -150,10 +201,10 @@ class DataLoads:
     @classmethod
     async def add_position(cls, data: PositionAdd) -> dict:
         async with Session() as session:
-            query_position = select(Position.id_position)
-            result_position = await session.execute(query_position)
-            position_models = result_position.unique().scalars().all()
-            position = Position(**(data.model_dump()), id_position=await DataLoads.get_id(position_models))
+            query = select(Position.id_position)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            position = Position(**(data.model_dump()), id_position=await UtilityFunction.get_id(models))
             session.add(position)
             await session.flush()
             await session.commit()
@@ -165,10 +216,10 @@ class DataLoads:
     @classmethod
     async def add_wd(cls, data: WhereDriveAdd) -> dict:
         async with Session() as session:
-            query_wd = select(WhereDrive.id_wd)
-            result_wd = await session.execute(query_wd)
-            wd_models = result_wd.unique().scalars().all()
-            wd = WhereDrive(**(data.model_dump()), id_wd=await DataLoads.get_id(wd_models))
+            query = select(WhereDrive.id_wd)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            wd = WhereDrive(**(data.model_dump()), id_wd=await UtilityFunction.get_id(models))
             session.add(wd)
             await session.flush()
             await session.commit()
@@ -180,10 +231,10 @@ class DataLoads:
     @classmethod
     async def add_people(cls, data: PeopleAdd) -> dict:
         async with Session() as session:
-            query_people = select(People.id_people)
-            result_people = await session.execute(query_people)
-            people_models = result_people.unique().scalars().all()
-            people = People(**(data.model_dump()), id_people=await DataLoads.get_id(people_models))
+            query = select(People.id_people)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            people = People(**(data.model_dump()), id_people=await UtilityFunction.get_id(models))
             session.add(people)
             await session.flush()
             await session.commit()
@@ -200,10 +251,10 @@ class DataLoads:
     @classmethod
     async def add_organization(cls, data: OrganizationAdd) -> dict:
         async with Session() as session:
-            query_organization = select(Organization.id_organization)
-            result_organization = await session.execute(query_organization)
-            organization_models = result_organization.unique().scalars().all()
-            organization = Organization(**(data.model_dump()), id_organization=await DataLoads.get_id(organization_models))
+            query = select(Organization.id_organization)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            organization = Organization(**(data.model_dump()), id_organization=await UtilityFunction.get_id(models))
             session.add(organization)
             await session.flush()
             await session.commit()
@@ -216,10 +267,10 @@ class DataLoads:
     @classmethod
     async def add_driver(cls, data: DriverAdd) -> dict:
         async with Session() as session:
-            query_driver = select(Driver.id_driver)
-            result_driver = await session.execute(query_driver)
-            driver_models = result_driver.unique().scalars().all()
-            driver = Driver(**(data.model_dump()), id_driver=await DataLoads.get_id(driver_models))
+            query = select(Driver.id_driver)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            driver = Driver(**(data.model_dump()), id_driver=await UtilityFunction.get_id(models))
             session.add(driver)
             await session.flush()
             await session.commit()
@@ -232,10 +283,10 @@ class DataLoads:
     @classmethod
     async def add_passenger(cls, data: PassengerAdd) -> dict:
         async with Session() as session:
-            query_passenger = select(Passenger.id_passenger)
-            result_passenger = await session.execute(query_passenger)
-            passenger_models = result_passenger.unique().scalars().all()
-            passenqer = Passenger(**(data.model_dump()), id_passenger=await DataLoads.get_id(passenger_models))
+            query = select(Passenger.id_passenger)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            passenqer = Passenger(**(data.model_dump()), id_passenger=await UtilityFunction.get_id(models))
             session.add(passenqer)
             await session.flush()
             await session.commit()
@@ -250,10 +301,10 @@ class DataLoads:
     @classmethod
     async def add_other_route(cls, data: OtherRouteAdd) -> dict:
         async with Session() as session:
-            query_other_route = select(OtherRoute.id_other_route)
-            result_other_route = await session.execute(query_other_route)
-            other_route_models = result_other_route.unique().scalars().all()
-            other_route = OtherRoute(**(data.model_dump()), id_other_route=await DataLoads.get_id(other_route_models))
+            query = select(OtherRoute.id_other_route)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            other_route = OtherRoute(**(data.model_dump()), id_other_route=await UtilityFunction.get_id(models))
             session.add(other_route)
             await session.flush()
             await session.commit()
@@ -268,10 +319,10 @@ class DataLoads:
     @classmethod
     async def add_refueling(cls, data: RefuelingAdd) -> dict:
         async with Session() as session:
-            query_refueling = select(Refueling.id_refueling)
-            result_refueling = await session.execute(query_refueling)
-            refueling_models = result_refueling.unique().scalars().all()
-            refueling = Refueling(**(data.model_dump()), id_refueling=await DataLoads.get_id(refueling_models))
+            query = select(Refueling.id_refueling)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            refueling = Refueling(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
             session.add(refueling)
             await session.flush()
             await session.commit()
@@ -287,161 +338,111 @@ class DataLoads:
 
 class DataGet:
     @staticmethod
-    async def check_double(data: RouteAdd):
-        async with Session() as session:
-            a, b = data.id_start_point, data.id_finish_point
-            one = await session.execute(select(Route).filter(Route.id_start_point == int(a),
-                                                             Route.id_finish_point == int(b)))
-            one_way = one.unique().scalars().first()
-            two = await session.execute(select(Route).filter(Route.id_start_point == int(b),
-                                                             Route.id_finish_point == int(a)))
-            other_way = two.unique().scalars().first()
-            if one_way is None and other_way is None:
-                return True
-            else:
-                return False
-
-    @staticmethod
-    async def list_id_routes(trip):
-        async with Session() as session:
-            id_trip = []
-            for i in range(len(trip) - 1):
-                a, b = trip[i], trip[i + 1]
-                query = await session.execute(select(Route).filter(Route.id_start_point == int(a),
-                                                      Route.id_finish_point == int(b)))
-                one_way = query.unique().scalars().first()
-                query = await session.execute(select(Route).filter(Route.id_start_point == int(b),
-                                                        Route.id_finish_point == int(a)))
-                other_way = query.unique().scalars().first()
-                if one_way is None:
-                    id_trip.append(other_way.id_route)
-                else:
-                    id_trip.append(one_way.id_route)
-            route_all = 0
-            query = await session.execute(select(Route))
-            res = query.unique().scalars().all()
-            for i in res:
-                if i.id_route in id_trip:
-                    route_all += i.distance
-            return route_all
-
-    @staticmethod
     async def all_name_point():
         async with Session() as session:
             query = select(Point)
             result = await session.execute(query)
-            point_models = result.unique().scalars().all()
-            point_dto = [NamePoint.model_validate(row, from_attributes=True) for row in point_models]
-            dict_points = {int(i.id_point):i.name_point for i in point_dto}
+            models = result.unique().scalars().all()
+            dto = [NamePoint.model_validate(row, from_attributes=True) for row in models]
+            dict_points = {int(i.id_point):i.name_point for i in dto}
             return dict_points
-
-    @staticmethod
-    async def get_name_point(data: RouteAdd):
-        async with Session() as session:
-            query = (
-                select(Point)
-                .filter(or_(Point.id_point == data.id_start_point, Point.id_point == data.id_finish_point))
-            )
-            result = await session.execute(query)
-            point_models = result.unique().scalars().all()
-            return point_models
 
     @staticmethod
     async def all_point():
         async with Session() as session:
             query = select(Point)
             result = await session.execute(query)
-            point_models = result.unique().scalars().all()
-            point_dto = [FullPoint.model_validate(row, from_attributes=True) for row in point_models]
-            return point_dto
+            models = result.unique().scalars().all()
+            dto = [FullPoint.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
     @staticmethod
     async def find_all_point():
         async with Session() as session:
             query = select(Point).options(selectinload(Point.peoples))
             result = await session.execute(query)
-            point_models = result.unique().scalars().all()
-            point_dto = [FullPointRe.model_validate(row, from_attributes=True) for row in point_models]
-            return point_dto
+            models = result.unique().scalars().all()
+            dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
     @staticmethod
     async def find_name_point(name_point: str):
         async with Session() as session:
             query = select(Point).options(selectinload(Point.peoples)).filter(Point.name_point == name_point)
             result = await session.execute(query)
-            point_models = result.unique().scalars().all()
-            point_dto = [FullPointRe.model_validate(row, from_attributes=True) for row in point_models]
-            return point_dto
+            models = result.unique().scalars().all()
+            dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_route(cls):
-        async with (Session() as session):
+    @staticmethod
+    async def find_all_route():
+        async with Session() as session:
             query = (
                 select(Route)
                 .options(joinedload(Route.point_start), joinedload(Route.point_finish))
                 .limit(10)
             )
             result = await session.execute(query)
-            route_models = result.scalars().all()
-            route_dto = [FullRouteRe.model_validate(row, from_attributes=True) for row in route_models]
-            return route_dto
+            models = result.scalars().all()
+            dto = [FullRouteRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_fuel(cls):
+    @staticmethod
+    async def find_all_fuel():
         async with Session() as session:
             query = (
                 select(Fuel)
                 .options(selectinload(Fuel.refuelings))
             )
             result = await session.execute(query)
-            fuel_models = result.unique().scalars().all()
-            fuel_dto = [FullFuelRe.model_validate(row, from_attributes=True) for row in fuel_models]
-            return fuel_dto
+            models = result.unique().scalars().all()
+            dto = [FullFuelRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_car(cls):
+    @staticmethod
+    async def find_all_car():
         async with Session() as session:
             query = select(Car).options(joinedload(Car.people))
             result = await session.execute(query)
-            car_models = result.unique().scalars().all()
-            car_dto = [FullCarRe.model_validate(row, from_attributes=True) for row in car_models]
-            return car_dto
+            models = result.unique().scalars().all()
+            dto = [FullCarRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
 
-    @classmethod
-    async def find_all_car_fuel(cls):
+    @staticmethod
+    async def find_all_car_fuel():
         async with Session() as session:
             query = select(CarFuel)
             result = await session.execute(query)
-            car_fuel_models = result.scalars().all()
-            return car_fuel_models
+            models = result.scalars().all()
+            return models
 
-    @classmethod
-    async def find_all_position(cls):
+    @staticmethod
+    async def find_all_position():
         async with Session() as session:
             query = (
                 select(Position)
                 .options(selectinload(Position.peoples))
             )
             result = await session.execute(query)
-            position_models = result.scalars().all()
-            position_dto = [FullPositionRe.model_validate(row, from_attributes=True) for row in position_models]
-            return position_dto
+            models = result.scalars().all()
+            dto = [FullPositionRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_wd(cls):
+    @staticmethod
+    async def find_all_wd():
         async with Session() as session:
             query = (
                 select(WhereDrive)
                 .options(selectinload(WhereDrive.passengers))
             )
             result = await session.execute(query)
-            wd_models = result.unique().scalars().all()
-            wd_dto = [FullWhereDriveRe.model_validate(row, from_attributes=True) for row in wd_models]
-            return wd_dto
+            models = result.unique().scalars().all()
+            dto = [FullWhereDriveRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_people(cls):
+    @staticmethod
+    async def find_all_people():
         async with Session() as session:
             query = (
                 select(People)
@@ -451,39 +452,39 @@ class DataGet:
                 .limit(20)
             )
             result = await session.execute(query)
-            people_models = result.unique().scalars().all()
-            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
-            return people_dto
+            models = result.unique().scalars().all()
+            dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_organization(cls):
+    @staticmethod
+    async def find_all_organization():
         async with Session() as session:
             query = (
                 select(Organization)
                 .options(joinedload(Organization.point))
             )
             result = await session.execute(query)
-            organization_models = result.unique().scalars().all()
-            organization_dto = [FullOrganizationRe.model_validate(row, from_attributes=True) for row in organization_models]
-            return organization_dto
+            models = result.unique().scalars().all()
+            dto = [FullOrganizationRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_user(cls, user_id: int):
+    @staticmethod
+    async def find_user(user_id: int):
         async with Session() as session:
             query = (
                 select(People)
-                    .options(joinedload(People.point))
-                    .options(joinedload(People.position))
-                    .options(selectinload(People.cars))
-                    .filter(People.id_people == user_id)
+                .options(joinedload(People.point))
+                .options(joinedload(People.position))
+                .options(selectinload(People.cars))
+                .filter(People.id_people == user_id)
             )
             result = await session.execute(query)
-            people_models = result.unique().scalars().all()
-            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
-            return people_dto
+            models = result.unique().scalars().all()
+            dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_driver(cls):
+    @staticmethod
+    async def find_all_driver():
         async with Session() as session:
             query = (
                 select(People)
@@ -494,13 +495,13 @@ class DataGet:
                 .limit(50)
             )
             result = await session.execute(query)
-            people_models = result.unique().scalars().all()
-            people_dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in people_models]
-            return people_dto
+            models = result.unique().scalars().all()
+            dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
 
-    @classmethod
-    async def find_driver_of_date(cls, now_date_trip):
+    @staticmethod
+    async def find_driver_of_date(now_date_trip):
         async with Session() as session:
             query = (
                 select(Driver)
@@ -509,12 +510,12 @@ class DataGet:
                 .limit(10)
             )
             result = await session.execute(query)
-            drivers_models = result.unique().scalars().all()
-            driver_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in drivers_models]
-            return driver_dto
+            models = result.unique().scalars().all()
+            dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_passenger_of_driver(cls, id_driver, wd):
+    @staticmethod
+    async def find_passenger_of_driver(id_driver, wd):
         async with Session() as session:
             query = (
                 select(Passenger)
@@ -538,14 +539,14 @@ class DataGet:
                 query = select(Point.id_point).filter(Point.name_point == 'Завод')
                 result = await session.execute(query)
                 list_id_point_forward.append(result.unique().scalars().first())
-                ss = await DataGet.list_id_routes(list_id_point_forward)
+                ss = await UtilityFunction.get_route_length(list_id_point_forward)
             else:
                 ...
             return dto, list_id_point_forward, ss
 
 
-    @classmethod
-    async def find_all_car_carrier(cls):
+    @staticmethod
+    async def find_all_car_carrier():
         async with Session() as session:
             query = (
                 select(Driver)
@@ -553,12 +554,12 @@ class DataGet:
                 .limit(10)
             )
             result = await session.execute(query)
-            drivers_models = result.unique().scalars().all()
-            driver_dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in drivers_models]
-            return driver_dto
+            models = result.unique().scalars().all()
+            dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_passengers(cls):
+    @staticmethod
+    async def find_all_passengers():
         async with Session() as session:
             query = (
                 select(Passenger)
@@ -567,32 +568,32 @@ class DataGet:
                 .options(joinedload(Passenger.wd))
             )
             result = await session.execute(query)
-            passenger_models = result.scalars().all()
-            passenger_dto = [FullPassengerRe.model_validate(row, from_attributes=True) for row in passenger_models]
-            return passenger_dto
+            models = result.scalars().all()
+            dto = [FullPassengerRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_other_route(cls):
+    @staticmethod
+    async def find_all_other_route():
         async with Session() as session:
             query = (
                 select(OtherRoute)
                 .options(joinedload(OtherRoute.organization), joinedload(OtherRoute.driver), joinedload(OtherRoute.wd))
             )
             result = await session.execute(query)
-            other_route_models = result.scalars().all()
-            other_route_dto = [FullOtherRouteRe.model_validate(row, from_attributes=True) for row in other_route_models]
-            return other_route_dto
+            models = result.scalars().all()
+            dto = [FullOtherRouteRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
-    @classmethod
-    async def find_all_refuelings(cls):
+    @staticmethod
+    async def find_all_refuelings():
         async with Session() as session:
             query = (
                 select(Refueling)
                 .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
             )
             result = await session.execute(query)
-            refueling_models = result.scalars().all()
-            refueling_dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in refueling_models]
-            return refueling_dto
+            models = result.scalars().all()
+            dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
 
 

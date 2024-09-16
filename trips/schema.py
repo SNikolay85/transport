@@ -152,7 +152,7 @@ class FullPassengerRe(FullPassenger):
 
 class FullPassengerDriverRe(FullPassenger):
     people: 'FullPeople'
-    wd: 'FullWhereDrive'
+    driver: 'FullDriver'
 
 
 # --------------------------

@@ -108,6 +108,25 @@ class UtilityFunction:
             models = result.unique().scalars().all()
             return models
 
+    @staticmethod
+    async def get_id_point_of_driver(id_driver: int) -> int:
+        async with Session() as session:
+            query = select(Driver.id_people).filter(Driver.id_driver == id_driver)
+            result = await session.execute(query)
+            model = result.unique().scalars().first()
+            query = select(People.id_point).filter(People.id_people == model)
+            result = await session.execute(query)
+            id_point_driver = result.unique().scalars().first()
+            return id_point_driver
+
+    @staticmethod
+    async def get_id_point_factory() -> int:
+        async with Session() as session:
+            query = select(Point.id_point).filter(Point.name_point == 'Завод')
+            result = await session.execute(query)
+            id_point_factory = result.unique().scalars().first()
+            return id_point_factory
+
 class DataLoads:
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
@@ -515,34 +534,32 @@ class DataGet:
             return dto
 
     @staticmethod
-    async def find_passenger_of_driver(id_driver, wd):
+    async def find_passenger_of_driver(id_driver):
         async with Session() as session:
             query = (
                 select(Passenger)
                 .options(joinedload(Passenger.people))
-                .options(joinedload(Passenger.wd))
-                .filter(Passenger.id_driver == id_driver, Passenger.where_drive == wd)
-                .limit(10)
+                .options(joinedload(Passenger.driver))
+                .filter(Passenger.id_driver == id_driver)
+                .limit(100)
+                .order_by(Passenger.order.asc())
             )
             result = await session.execute(query)
             models = result.unique().scalars().all()
             dto = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models]
-            if wd == 1:
-                list_id_point_forward = []
-                query = select(Driver.id_people).filter(Driver.id_driver == id_driver)
-                result = await session.execute(query)
-                md = result.unique().scalars().first()
-                query = select(People.id_point).filter(People.id_people == md)
-                result = await session.execute(query)
-                list_id_point_forward.append(result.unique().scalars().first())
-                list_id_point_forward.extend([i.people.id_point for i in dto])
-                query = select(Point.id_point).filter(Point.name_point == 'Завод')
-                result = await session.execute(query)
-                list_id_point_forward.append(result.unique().scalars().first())
-                ss = await UtilityFunction.get_route_length(list_id_point_forward)
-            else:
-                ...
-            return dto, list_id_point_forward, ss
+            list_id_point_forward = []
+            list_id_point_away = []
+            id_point_driver = await UtilityFunction.get_id_point_of_driver(id_driver)
+            id_point_factory = await UtilityFunction.get_id_point_factory()
+            list_id_point_forward.append(id_point_driver)
+            list_id_point_forward.extend([i.people.id_point for i in dto if i.where_drive == 1])
+            list_id_point_forward.append(id_point_factory)
+            list_id_point_away.append(id_point_factory)
+            list_id_point_away.extend([i.people.id_point for i in dto if i.where_drive == 2])
+            list_id_point_away.append(id_point_driver)
+            length_route_forward = await UtilityFunction.get_route_length(list_id_point_forward)
+            length_route_away = await UtilityFunction.get_route_length(list_id_point_away)
+            return dto, length_route_forward, list_id_point_forward, length_route_away, list_id_point_away
 
 
     @staticmethod

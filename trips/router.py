@@ -205,12 +205,14 @@ async def get_passenger():
     passengers = await DataGet.find_all_passengers()
     return {'passengers': passengers}
 
-@router_passenger.get('/{[id_driver, wd]}')
-async def get_passenger_of_driver(id_driver: int, wd: int):
-    pas_driver = await DataGet.find_passenger_of_driver(id_driver, wd)
+@router_passenger.get('/{id_driver}')
+async def get_passenger_of_driver(id_driver: int):
+    pas_driver = await DataGet.find_passenger_of_driver(id_driver)
     return {'passenger_of_driver': pas_driver[0],
-            'distance': pas_driver[2],
-            'route_of_point': pas_driver[1]
+            'distance_forward': pas_driver[1],
+            'route_of_point_f': pas_driver[2],
+            'distance_aw': pas_driver[3],
+            'route_of_point_aw': pas_driver[4]
             }
 
 @router_other_route.post('/')

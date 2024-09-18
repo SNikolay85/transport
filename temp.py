@@ -1,6 +1,8 @@
 import asyncio
+from hashlib import md5
 from pprint import pprint
 from typing import Optional
+
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select
@@ -21,12 +23,12 @@ from fastapi.responses import FileResponse
 
 
 
-def my_round(num):
+async def my_round(num):
     return num if num % 5 == 0 else num + (5 - (num % 5))
 
 
 
-print(my_round(1))
+
 
 app = FastAPI()
 
@@ -154,4 +156,4 @@ async def get_driver():
 #pprint(asyncio.run(DataGet.find_all_people()))
 #pprint(asyncio.run(DataGet.find_all_car()))
 #pprint(asyncio.run(DataGet.find_point_with_people()))
-pprint(asyncio.run(get_driver()))
+#pprint(asyncio.run(get_driver()))

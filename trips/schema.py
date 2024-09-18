@@ -76,7 +76,7 @@ class PeopleAdd(BaseModel):
     patronymic: str
     id_point: int
     id_position: int
-    driving_licence: Optional[str]
+    driving_licence: Optional[str] = None
 
 class PeopleMin(BaseModel):
     first_name: str
@@ -101,6 +101,10 @@ class FullPeRe(FullPeople):
 class OrganizationAdd(BaseModel):
     name_organization: str
     id_point: int
+
+class OrganizationUpdate(BaseModel):
+    name_organization: Optional[str] = None
+    id_point: Optional[int] = None
 
 class FullOrganization(OrganizationAdd):
     id_organization: int

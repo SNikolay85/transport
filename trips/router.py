@@ -7,8 +7,9 @@ from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
+from trips.schema import OrganizationUpdate
 
-from trips.reposit import DataLoads, DataGet, UtilityFunction
+from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPut
 
 router_point = APIRouter(prefix='/point', tags=['Point'])
 router_route = APIRouter(prefix='/route', tags=['Route'])
@@ -167,6 +168,11 @@ async def get_user(user_id: int):
 @router_organization.post('/')
 async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
     organization_data = await DataLoads.add_organization(organization)
+    return organization_data
+
+@router_organization.patch('/{id_organization}')
+async def change_organization(id_organization: int, organization: Annotated[OrganizationUpdate, Depends()]):
+    organization_data = await DataPut.update_organization(id_organization, organization)
     return organization_data
 
 

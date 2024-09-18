@@ -1,5 +1,10 @@
-from config import TOKEN_ORS
-from sqlalchemy import select, or_
+from hashlib import md5
+
+from attr.filters import exclude
+from sqlalchemy.exc import SQLAlchemyError
+
+from config import TOKEN_ORS, SALT
+from sqlalchemy import select, or_, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
@@ -7,6 +12,7 @@ from trips.models import WhereDrive, People, Driver, Passenger, Refueling, Other
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
+from trips.schema import OrganizationUpdate
 
 from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
@@ -20,6 +26,15 @@ from geopy.geocoders import Nominatim
 
 
 class UtilityFunction:
+    SALT = SALT
+
+    @staticmethod
+    def hash_password(self, password: str):
+        password = f"{self.SALT}{password}"
+        password = password.encode()
+        password = md5(password).hexdigest()
+        return password
+
     @staticmethod
     def my_round(num):
         return num if num % 5 == 0 else num + (5 - (num % 5))
@@ -126,6 +141,31 @@ class UtilityFunction:
             result = await session.execute(query)
             id_point_factory = result.unique().scalars().first()
             return id_point_factory
+
+
+class DataPut:
+    model = None
+    @classmethod
+    async def update_organization(cls, id_organization: int, data: OrganizationUpdate):
+        print(data, type(data))
+        async with Session() as session:
+            query = (
+                select(Organization)
+                .filter(Organization.id_organization == id_organization)
+            )
+            result = await session.execute(query)
+            model = result.unique().scalars().first()
+            print(model, type(model))
+            if data.name_organization:
+                model.name_organization = data.name_organization
+            if data.id_point:
+                model.id_point = data.id_point
+            # organization = Organization(**(model))
+            # session.add(organization)
+            # await session.flush()
+            # await session.commit()
+            return model
+
 
 class DataLoads:
     @classmethod

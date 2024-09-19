@@ -1,8 +1,9 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Any
 
 from pydantic import BaseModel, Field, field_validator
 from pydantic.main import Model
+from sqlalchemy import func
 
 '''
 gt - больше, чем

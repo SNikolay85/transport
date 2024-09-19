@@ -36,7 +36,7 @@ str50 = Annotated[str, 50]
 date_trip = Annotated[date, mapped_column(Date)]
 
 created_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
-updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now)]
+updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())]
 
 
 class Base(DeclarativeBase):

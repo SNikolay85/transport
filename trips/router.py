@@ -173,9 +173,9 @@ async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
 
 @router_organization.patch('/{id_organization}')
 async def change_organization(id_organization: int, organization: Annotated[OrganizationUpdate, Depends()]):
-    if organization.model_dump() == {}:
+    if organization.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
-    organization_data = await DataPut.update_organization(organization)
+    organization_data = await DataPut.update_organization(id_organization, organization)
     return organization_data
 
 

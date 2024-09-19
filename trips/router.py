@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, Body
+from fastapi import APIRouter, Depends, Form, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
@@ -170,9 +170,12 @@ async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
     organization_data = await DataLoads.add_organization(organization)
     return organization_data
 
+
 @router_organization.patch('/{id_organization}')
 async def change_organization(id_organization: int, organization: Annotated[OrganizationUpdate, Depends()]):
-    organization_data = await DataPut.update_organization(id_organization, organization)
+    if organization.model_dump() == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    organization_data = await DataPut.update_organization(organization)
     return organization_data
 
 

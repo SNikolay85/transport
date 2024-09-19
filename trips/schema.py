@@ -1,7 +1,8 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from pydantic.main import Model
 
 '''
 gt - больше, чем
@@ -105,6 +106,7 @@ class OrganizationAdd(BaseModel):
 class OrganizationUpdate(BaseModel):
     name_organization: Optional[str] = None
     id_point: Optional[int] = None
+
 
 class FullOrganization(OrganizationAdd):
     id_organization: int

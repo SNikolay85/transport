@@ -1,6 +1,5 @@
 from hashlib import md5
 
-from attr.filters import exclude
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import TOKEN_ORS, SALT
@@ -146,25 +145,30 @@ class UtilityFunction:
 class DataPut:
     model = None
     @classmethod
-    async def update_organization(cls, id_organization: int, data: OrganizationUpdate):
+    async def update_organization(cls, **data):
         print(data, type(data))
         async with Session() as session:
             query = (
-                select(Organization)
-                .filter(Organization.id_organization == id_organization)
+                update(Organization)
+                .where(Organization.id_organization == data['id_organization'])
+                .values(data)
+                .returning(Organization.id_organization)
             )
             result = await session.execute(query)
-            model = result.unique().scalars().first()
-            print(model, type(model))
-            if data.name_organization:
-                model.name_organization = data.name_organization
-            if data.id_point:
-                model.id_point = data.id_point
+            update_organization = result.fetchone()
+            if update_organization is not None:
+                return update_organization[0]
+            #model = result.unique().scalars().first()
+            # print(model, type(model))
+            # if data.name_organization:
+            #     model.name_organization = data.name_organization
+            # if data.id_point:
+            #     model.id_point = data.id_point
             # organization = Organization(**(model))
             # session.add(organization)
             # await session.flush()
             # await session.commit()
-            return model
+            # return model
 
 
 class DataLoads:

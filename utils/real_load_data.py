@@ -25,6 +25,12 @@ async def reboot_tables():
     await create_tables()
 
 
+def format_date(date_time=None, date=None):
+    if date is None:
+        return datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S.%f%z')
+    return datetime.strptime(date, '%Y-%m-%d').date()
+
+
 async def load_db(data_trans):
     for record in data_trans:
         if record['model'] == 'point':
@@ -33,7 +39,10 @@ async def load_db(data_trans):
                 name_point=record['fields']['name'],
                 latitude=record['fields']['latitude'],
                 longitude=record['fields']['longitude'],
-                cost=record['fields']['cost'])
+                cost=record['fields']['cost'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(point)
             await session.commit()
         elif record['model'] == 'route':
@@ -41,7 +50,10 @@ async def load_db(data_trans):
                 id_route=record['fields']['id_route'],
                 id_start_point=record['fields']['start'],
                 id_finish_point=record['fields']['finish'],
-                distance=record['fields']['distance'])
+                distance=record['fields']['distance'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(route)
             await session.commit()
         elif record['model'] == 'car':
@@ -50,32 +62,47 @@ async def load_db(data_trans):
                 name_car=record['fields']['name'],
                 number_of_car=record['fields']['number'],
                 average_consumption=record['fields']['average'],
-                id_people=record['fields']['people'])
+                id_people=record['fields']['people'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(car)
             await session.commit()
         elif record['model'] == 'fuel':
             fuel = Fuel(
                 id_fuel=record['fields']['id_fuel'],
-                name_fuel=record['fields']['name'])
+                name_fuel=record['fields']['name'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(fuel)
             await session.commit()
         elif record['model'] == 'where_drive':
             where_drive = WhereDrive(
                 id_wd=record['fields']['id_wd'],
-                name_wd=record['fields']['name'])
+                name_wd=record['fields']['name'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(where_drive)
             await session.commit()
         elif record['model'] == 'car_fuel':
             car_fuel = CarFuel(
                 id_car_fuel=record['fields']['id_car_fuel'],
                 id_car=record['fields']['car'],
-                id_fuel=record['fields']['fuel'])
+                id_fuel=record['fields']['fuel'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(car_fuel)
             await session.commit()
         elif record['model'] == 'position':
             position = Position(
                 id_position=record['fields']['id_position'],
-                name_position=record['fields']['name'])
+                name_position=record['fields']['name'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(position)
             await session.commit()
         elif record['model'] == 'people':
@@ -86,22 +113,30 @@ async def load_db(data_trans):
                 patronymic=record['fields']['patronymic'],
                 id_point=record['fields']['id_point'],
                 id_position=record['fields']['id_position'],
-                driving_licence=record['fields'].setdefault('driving_licence', None))
+                driving_licence=record['fields'].setdefault('driving_licence', None),
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(people)
             await session.commit()
         elif record['model'] == 'organization':
             organization = Organization(
                 id_organization=record['fields']['id_organization'],
                 name_organization=record['fields']['name_organization'],
-                id_point=record['fields']['id_point'])
+                id_point=record['fields']['id_point'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(organization)
             await session.commit()
         elif record['model'] == 'drivers':
-            date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
             drivers = Driver(
                 id_driver=record['fields']['id_driver'],
                 id_people=record['fields']['driver'],
-                date_trip=date_format)
+                date_trip=format_date(date=record['fields']['date']),
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(drivers)
             await session.commit()
         elif record['model'] == 'passengers':
@@ -110,7 +145,10 @@ async def load_db(data_trans):
                 order=record['fields']['order'],
                 id_people=record['fields']['passenger'],
                 id_driver=record['fields']['driver'],
-                where_drive=record['fields']['WD'])
+                where_drive=record['fields']['WD'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(passenger)
             await session.commit()
         elif record['model'] == 'other_route':
@@ -119,17 +157,22 @@ async def load_db(data_trans):
                 order=record['fields']['order'],
                 id_organization=record['fields']['organization'],
                 id_driver=record['fields']['driver'],
-                where_drive=record['fields']['WD'])
+                where_drive=record['fields']['WD'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(other_route)
             await session.commit()
         elif record['model'] == 'refueling':
-            date_format = datetime.strptime(record['fields']['date'], '%Y-%m-%d').date()
             refueling = Refueling(
                 id_refueling=record['fields']['id_refueling'],
                 id_fuel=record['fields']['fuel'],
                 id_people=record['fields']['people'],
                 quantity=record['fields']['quantity'],
-                date_refueling=date_format)
+                date_refueling=format_date(date=record['fields']['date']),
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
             session.add(refueling)
             await session.commit()
 
@@ -137,8 +180,6 @@ async def load_db(data_trans):
     return print('Данные считаны и загружены в БД')
 
 if __name__ == '__main__':
-    # asyncio.get_event_loop().run_until_complete(reboot_tables())
-    # #asyncio.run(reboot_tables())
-    # print('Таблицы пересозданы')
+    asyncio.get_event_loop().run_until_complete(reboot_tables())
+    print('Таблицы пересозданы')
     asyncio.get_event_loop().run_until_complete(load_db(data_base))
-    # asyncio.run(load_db(data_base))

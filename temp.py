@@ -27,7 +27,8 @@ async def my_round(num):
     return num if num % 5 == 0 else num + (5 - (num % 5))
 
 
-
+print(datetime.strptime('2024-09-02 23:59:59.999999+00:00',
+                  '%Y-%m-%d %H:%M:%S.%f%z'))
 
 
 app = FastAPI()

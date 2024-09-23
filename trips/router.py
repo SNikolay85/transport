@@ -7,9 +7,9 @@ from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate
+from trips.schema import OrganizationUpdate, PointUpdate
 
-from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPut
+from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch
 
 router_point = APIRouter(prefix='/point', tags=['Point'])
 router_route = APIRouter(prefix='/route', tags=['Route'])
@@ -32,8 +32,18 @@ router_refueling = APIRouter(prefix='/refueling', tags=['Refueling'])
 #     return {"message": f"{point_data['name_point']}, добавлено в базу"}
 @router_point.post('/')
 async def add_point(data: Annotated[PointAdd, Depends()]):
+    if await UtilityFunction.check_name_point(data.name_point):
+        raise HTTPException(status_code=422, detail='Такое название уже есть в базе')
     point_data = await DataLoads.add_point(data)
     return {"message": f"{point_data['name_point']}, добавлено в базу"}
+
+
+@router_point.patch('/{id_point}')
+async def change_point(id_point: int, point: Annotated[PointUpdate, Depends()]):
+    if point.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    point_data = await DataPatch.update_point(id_point, point)
+    return point_data
 
 
 # @router_point.post('/')
@@ -165,6 +175,7 @@ async def get_user(user_id: int):
     user = await DataGet.find_user(user_id)
     return {'user': user}
 
+
 @router_organization.post('/')
 async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
     organization_data = await DataLoads.add_organization(organization)
@@ -175,7 +186,7 @@ async def add_organization(organization: Annotated[OrganizationAdd, Depends()]):
 async def change_organization(id_organization: int, organization: Annotated[OrganizationUpdate, Depends()]):
     if organization.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
-    organization_data = await DataPut.update_organization(id_organization, organization)
+    organization_data = await DataPatch.update_organization(id_organization, organization)
     return organization_data
 
 

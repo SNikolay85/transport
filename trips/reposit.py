@@ -1,5 +1,6 @@
 from hashlib import md5
 
+from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import TOKEN_ORS, SALT
@@ -11,7 +12,7 @@ from trips.models import WhereDrive, People, Driver, Passenger, Refueling, Other
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate
+from trips.schema import OrganizationUpdate, PointUpdate
 
 from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
@@ -37,6 +38,12 @@ class UtilityFunction:
     @staticmethod
     def my_round(num):
         return num if num % 5 == 0 else num + (5 - (num % 5))
+
+    @staticmethod
+    def get_geo_point(name):
+        loc = Nominatim(user_agent="GetLoc")
+        get_location = loc.geocode(name)
+        return get_location
 
     @staticmethod
     def matrix(locations: list):
@@ -141,8 +148,46 @@ class UtilityFunction:
             id_point_factory = result.unique().scalars().first()
             return id_point_factory
 
+    @staticmethod
+    async def check_name_point(name: str) -> bool:
+        async with Session() as session:
+            query = (
+                select(Point.name_point)
+                .filter(Point.name_point == name)
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            if models:
+                return True
+            return False
 
-class DataPut:
+
+class DataPatch:
+    @classmethod
+    async def update_point(cls, id_point: int, data: PointUpdate):
+        if data.name_point is not None:
+            get_location = UtilityFunction.get_geo_point(data.name_point)
+            if get_location is None:
+                raise HTTPException(status_code=422, detail='Для заднного названия нет геоданных')
+            dictor = {'latitude': get_location.latitude, 'longitude': get_location.longitude}
+        else:
+            dictor = {}
+        async with Session() as session:
+            query = (
+                update(Point)
+                .where(Point.id_point == id_point)
+                .values(**(data.model_dump(exclude_none=True)), **dictor)
+                .returning(Point.id_point, Point.name_point, Point.cost, Point.latitude, Point.longitude)
+            )
+            result = await session.execute(query)
+            update_point = result.fetchone()
+            await session.commit()
+            if update_point is not None:
+                return (f'Изменения для id {update_point[0]}: '
+                        f'Название - {update_point[1]}, '
+                        f'Стоимость - {update_point[2]}, '
+                        f'Координаты - [{update_point[3]}: {update_point[4]}]')
+
     @classmethod
     async def update_organization(cls, id_organization: int, data: OrganizationUpdate):
         async with Session() as session:
@@ -156,14 +201,17 @@ class DataPut:
             update_organization = result.fetchone()
             await session.commit()
             if update_organization is not None:
-                return f'Изменения для id {update_organization[0]}: Название - {update_organization[1]}, id адреса - {update_organization[2]}'
+                return (f'Изменения для id {update_organization[0]}: '
+                        f'Название - {update_organization[1]}, '
+                        f'id адреса - {update_organization[2]}')
 
 
 class DataLoads:
     @classmethod
     async def add_point(cls, data: PointAdd) -> dict:
-        loc = Nominatim(user_agent="GetLoc")
-        get_location = loc.geocode(data.name_point)
+        get_location = UtilityFunction.get_geo_point(data.name_point)
+        if get_location is None:
+            raise HTTPException(status_code=422, detail='Для заднного названия нет геоданных')
         async with Session() as session:
             query = select(Point.id_point)
             result = await session.execute(query)

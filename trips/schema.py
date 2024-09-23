@@ -2,8 +2,9 @@ from datetime import date, datetime
 from typing import Optional, Any
 
 from pydantic import BaseModel, Field, field_validator
-from pydantic.main import Model
-from sqlalchemy import func
+
+from trips.models import Point, Session
+from sqlalchemy import func, select
 
 '''
 gt - больше, чем
@@ -15,6 +16,16 @@ allow_inf_nan - разрешать 'inf', '-inf', 'nan' значения
 '''
 
 
+class Utils:
+    @staticmethod
+    def find_all_point():
+        with Session() as session:
+            query = select(Point.id_point)
+            result = session.execute(query)
+            models = result.unique().scalars().all()
+            return models
+
+
 # --------------------------
 # schemes for model Point
 class PointAdd(BaseModel):
@@ -22,15 +33,15 @@ class PointAdd(BaseModel):
     cost: int = Field(ge=0)
 
 
+class PointUpdate(BaseModel):
+    name_point: Optional[str] = Field(default=None, max_length=100, min_length=1)
+    cost: Optional[int] = Field(default=None, ge=0)
+
+
 class FullPoint(PointAdd):
     id_point: int
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-
-
-class AllRecordsPoint(FullPoint):
-    create_on: datetime
-    update_on: datetime
 
 
 class NamePoint(BaseModel):
@@ -60,11 +71,6 @@ class FullFuel(FuelAdd):
     id_fuel: int
 
 
-# class AllRecordsFuel(FullFuel):
-#     create_on: datetime
-#     update_on: datetime
-
-
 class FullFuelRe(FullFuel):
     refuelings: list['FullRefueling']
 
@@ -77,11 +83,6 @@ class WhereDriveAdd(BaseModel):
 
 class FullWhereDrive(WhereDriveAdd):
     id_wd: int
-
-
-# class AllRecordsWhereDrive(FullWhereDrive):
-#     create_on: datetime
-#     update_on: datetime
 
 
 class FullWhereDriveRe(FullWhereDrive):
@@ -97,11 +98,6 @@ class CarFuelAdd(BaseModel):
 
 class FullCarFuel(CarFuelAdd):
     id_car_fuel: int
-
-
-# class AllRecordsCarFuel(FullCarFuel):
-#     create_on: datetime.tzinfo
-#     update_on: datetime
 
 
 # --------------------------
@@ -124,11 +120,6 @@ class FullPeople(PeopleAdd):
     id_people: int
 
 
-# class AllRecordsPeople(FullPeople):
-#     create_on: datetime
-#     update_on: datetime
-
-
 class FullPeopleRe(FullPeople):
     point: 'PointMin'
     position: 'FullPosition'
@@ -147,19 +138,33 @@ class OrganizationAdd(BaseModel):
     name_organization: str
     id_point: int
 
+    # @field_validator('id_point')
+    # async def validate(self, id_point):
+    #     if id_point not in [i.id_organization for i in await DataGet.find_all_organization()]:
+    #         raise ValueError('such id not in base')
+    #     return id_point
+
 
 class OrganizationUpdate(BaseModel):
     name_organization: Optional[str] = None
     id_point: Optional[int] = None
 
+    # @field_validator('name_organization', 'id_point')
+    # @classmethod
+    # def valid(cls, a, b):
+    #     if a is None and b is None:
+    #         raise ValueError('xren')
+    #     return a, b
+    # @field_validator('id_point')
+    # @classmethod
+    # def validate(cls, id_point):
+    #     if id_point not in [1, 3, 6]:
+    #         raise ValueError('such id not in base')
+    #     return id_point
+
 
 class FullOrganization(OrganizationAdd):
     id_organization: int
-
-
-# class AllRecordsOrganization(FullOrganization):
-#     create_on: datetime
-#     update_on: datetime
 
 
 class FullOrganizationRe(FullOrganization):
@@ -179,11 +184,6 @@ class FullCar(CarAdd):
     id_car: int
 
 
-# class AllRecordsCar(FullCar):
-#     create_on: datetime
-#     update_on: datetime
-
-
 class FullCarRe(FullCar):
     people: 'FullPeople'
 
@@ -197,11 +197,6 @@ class DriverAdd(BaseModel):
 
 class FullDriver(DriverAdd):
     id_driver: int
-
-
-# class AllRecordsDriver(FullDriver):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
 
 
 class FullDriverRe(FullDriver):
@@ -219,11 +214,6 @@ class PassengerAdd(BaseModel):
 
 class FullPassenger(PassengerAdd):
     id_passenger: int
-
-
-# class AllRecordsPassenger(FullPassenger):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
 
 
 class FullPassengerRe(FullPassenger):
@@ -250,11 +240,6 @@ class FullOtherRoute(OtherRouteAdd):
     id_other_route: int
 
 
-# class AllRecordsOtherRoute(FullOtherRoute):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
-
-
 class FullOtherRouteRe(FullOtherRoute):
     organization: 'FullOrganization'
     driver: 'FullDriver'
@@ -269,11 +254,6 @@ class PositionAdd(BaseModel):
 
 class FullPosition(PositionAdd):
     id_position: int
-
-
-# class AllRecordsPosition(FullPosition):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
 
 
 class FullPositionRe(FullPosition):
@@ -292,11 +272,6 @@ class FullRoute(RouteAdd):
     distance: Optional[int] = None
 
 
-# class AllRecordsRoute(FullRoute):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
-
-
 class FullRouteRe(FullRoute):
     point_start: 'FullPoint'
     point_finish: 'FullPoint'
@@ -313,11 +288,6 @@ class RefuelingAdd(BaseModel):
 
 class FullRefueling(RefuelingAdd):
     id_refueling: int
-
-
-# class AllRecordsRefueling(FullRefueling):
-#     create_on: datetime.tzinfo
-#     update_on: datetime.tzinfo
 
 
 class FullRefuelingRe(FullRefueling):

@@ -214,6 +214,18 @@ async def get_date_trip_driver(now_date_trip: datetime):
     return {'car_carrier': car_carrier}
 
 
+@router_driver.get('/distance/{id_driver}')
+async def get_distance_of_driver(id_driver: int):
+    dist_driver = await UtilityFunction.find_distance_of_driver(id_driver)
+    return {'passenger_of_driver': dist_driver[0],
+            'organization_of_driver': dist_driver[1],
+            'distance_forward': dist_driver[2],
+            'route_of_point_f': dist_driver[3],
+            'distance_aw': dist_driver[4],
+            'route_of_point_aw': dist_driver[5]
+            }
+
+
 @router_passenger.post('/')
 async def add_passenger(passenger: Annotated[PassengerAdd, Depends()]):
     passenger_data = await DataLoads.add_passenger(passenger)
@@ -225,15 +237,6 @@ async def get_passenger():
     passengers = await DataGet.find_all_passengers()
     return {'passengers': passengers}
 
-@router_passenger.get('/{id_driver}')
-async def get_passenger_of_driver(id_driver: int):
-    pas_driver = await DataGet.find_passenger_of_driver(id_driver)
-    return {'passenger_of_driver': pas_driver[0],
-            'distance_forward': pas_driver[1],
-            'route_of_point_f': pas_driver[2],
-            'distance_aw': pas_driver[3],
-            'route_of_point_aw': pas_driver[4]
-            }
 
 @router_other_route.post('/')
 async def add_other_route(other_route: Annotated[OtherRouteAdd, Depends()]):

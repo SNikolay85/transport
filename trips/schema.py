@@ -246,6 +246,11 @@ class FullOtherRouteRe(FullOtherRoute):
     wd: 'FullWhereDrive'
 
 
+class FullOtherRouteDriverRe(FullOtherRoute):
+    organization: 'FullOrganization'
+    driver: 'FullDriver'
+
+
 # --------------------------
 # schemes for model Position
 class PositionAdd(BaseModel):

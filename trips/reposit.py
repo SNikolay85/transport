@@ -19,7 +19,7 @@ from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
-from trips.schema import FullPassengerRe, FullPassengerDriverRe
+from trips.schema import FullPassengerRe, FullPassengerDriverRe, FullOtherRouteDriverRe
 
 import requests
 from geopy.geocoders import Nominatim
@@ -161,22 +161,66 @@ class UtilityFunction:
                 return True
             return False
 
+    @staticmethod
+    async def find_distance_of_driver(id_driver):
+        async with Session() as session:
+            query_passenger = (
+                select(Passenger)
+                .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.driver))
+                .filter(Passenger.id_driver == id_driver)
+                .limit(100)
+                .order_by(Passenger.order.asc())
+            )
+            result_passenger = await session.execute(query_passenger)
+            models_passenger = result_passenger.unique().scalars().all()
+            dto_passenger = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models_passenger]
+            query_or = (
+                select(OtherRoute)
+                .options(joinedload(OtherRoute.organization))
+                .options(joinedload(OtherRoute.driver))
+                .filter(OtherRoute.id_driver == id_driver)
+                .limit(100)
+                .order_by(OtherRoute.order.asc())
+            )
+            result_or = await session.execute(query_or)
+            models_or = result_or.unique().scalars().all()
+            dto_or = [FullOtherRouteDriverRe.model_validate(row, from_attributes=True) for row in models_or]
+            list_id_point_forward = []
+            list_id_point_away = []
+            id_point_driver = await UtilityFunction.get_id_point_of_driver(id_driver)
+            id_point_factory = await UtilityFunction.get_id_point_factory()
+            list_id_point_forward.append(id_point_driver)
+            list_id_point_forward.extend([i.people.id_point for i in dto_passenger if i.where_drive == 1])
+            list_id_point_forward.append(id_point_factory)
+            list_id_point_forward.extend([i.organization.id_point for i in dto_or if i.where_drive == 3])
+            list_id_point_away.extend([i.organization.id_point for i in dto_or if i.where_drive == 4])
+            list_id_point_away.append(id_point_factory)
+            list_id_point_away.extend([i.people.id_point for i in dto_passenger if i.where_drive == 2])
+            list_id_point_away.append(id_point_driver)
+            length_route_forward = await UtilityFunction.get_route_length(list_id_point_forward)
+            length_route_away = await UtilityFunction.get_route_length(list_id_point_away)
+            return dto_passenger, dto_or, length_route_forward, list_id_point_forward, length_route_away, list_id_point_away
+
 
 class DataPatch:
     @classmethod
     async def update_point(cls, id_point: int, data: PointUpdate):
-        if data.name_point is not None:
+        if data.name_point is not None and data.name_point != 'Завод':
             get_location = UtilityFunction.get_geo_point(data.name_point)
             if get_location is None:
                 raise HTTPException(status_code=422, detail='Для заднного названия нет геоданных')
-            dictor = {'latitude': get_location.latitude, 'longitude': get_location.longitude}
+            geo_data = {'latitude': get_location.latitude, 'longitude': get_location.longitude}
         else:
-            dictor = {}
+            if data.name_point == 'Завод':
+                geo_data = {'latitude': 53.389813, 'longitude': 50.431804}
+            else:
+                geo_data = {}
         async with Session() as session:
             query = (
                 update(Point)
                 .where(Point.id_point == id_point)
-                .values(**(data.model_dump(exclude_none=True)), **dictor)
+                .values(**(data.model_dump(exclude_none=True)), **geo_data)
                 .returning(Point.id_point, Point.name_point, Point.cost, Point.latitude, Point.longitude)
             )
             result = await session.execute(query)
@@ -612,35 +656,6 @@ class DataGet:
             models = result.unique().scalars().all()
             dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in models]
             return dto
-
-    @staticmethod
-    async def find_passenger_of_driver(id_driver):
-        async with Session() as session:
-            query = (
-                select(Passenger)
-                .options(joinedload(Passenger.people))
-                .options(joinedload(Passenger.driver))
-                .filter(Passenger.id_driver == id_driver)
-                .limit(100)
-                .order_by(Passenger.order.asc())
-            )
-            result = await session.execute(query)
-            models = result.unique().scalars().all()
-            dto = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models]
-            list_id_point_forward = []
-            list_id_point_away = []
-            id_point_driver = await UtilityFunction.get_id_point_of_driver(id_driver)
-            id_point_factory = await UtilityFunction.get_id_point_factory()
-            list_id_point_forward.append(id_point_driver)
-            list_id_point_forward.extend([i.people.id_point for i in dto if i.where_drive == 1])
-            list_id_point_forward.append(id_point_factory)
-            list_id_point_away.append(id_point_factory)
-            list_id_point_away.extend([i.people.id_point for i in dto if i.where_drive == 2])
-            list_id_point_away.append(id_point_driver)
-            length_route_forward = await UtilityFunction.get_route_length(list_id_point_forward)
-            length_route_away = await UtilityFunction.get_route_length(list_id_point_away)
-            return dto, length_route_forward, list_id_point_forward, length_route_away, list_id_point_away
-
 
     @staticmethod
     async def find_all_car_carrier():

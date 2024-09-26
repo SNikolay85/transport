@@ -105,11 +105,15 @@ class UtilityFunction:
             id_trip = []
             for i in range(len(trip) - 1):
                 a, b = trip[i], trip[i + 1]
-                query = await session.execute(select(Route).filter(Route.id_start_point == int(a),
-                                                      Route.id_finish_point == int(b)))
+                query = await session.execute(
+                    select(Route)
+                    .filter(Route.id_start_point == int(a), Route.id_finish_point == int(b))
+                )
                 one_way = query.unique().scalars().first()
-                query = await session.execute(select(Route).filter(Route.id_start_point == int(b),
-                                                        Route.id_finish_point == int(a)))
+                query = await session.execute(
+                    select(Route)
+                    .filter(Route.id_start_point == int(b), Route.id_finish_point == int(a))
+                )
                 other_way = query.unique().scalars().first()
                 if one_way is None:
                     id_trip.append(other_way.id_route)
@@ -162,6 +166,23 @@ class UtilityFunction:
             return False
 
     @staticmethod
+    async def build_forward(driver, factory, dto_pas, dto_or) -> list:
+        id_point_forward = [driver]
+        id_point_forward.extend([i.people.id_point for i in dto_pas if i.where_drive == 1])
+        id_point_forward.append(factory)
+        id_point_forward.extend([i.organization.id_point for i in dto_or if i.where_drive == 3])
+        return id_point_forward
+
+    @staticmethod
+    async def build_away(driver, factory, dto_pas, dto_or) -> list:
+        id_point_away = []
+        id_point_away.extend([i.organization.id_point for i in dto_or if i.where_drive == 4])
+        id_point_away.append(factory)
+        id_point_away.extend([i.people.id_point for i in dto_pas if i.where_drive == 2])
+        id_point_away.append(driver)
+        return id_point_away
+
+    @staticmethod
     async def find_distance_of_driver(id_driver):
         async with Session() as session:
             query_passenger = (
@@ -172,9 +193,9 @@ class UtilityFunction:
                 .limit(100)
                 .order_by(Passenger.order.asc())
             )
-            result_passenger = await session.execute(query_passenger)
-            models_passenger = result_passenger.unique().scalars().all()
-            dto_passenger = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models_passenger]
+            result_pas = await session.execute(query_passenger)
+            models_pas = result_pas.unique().scalars().all()
+            dto_pas = [FullPassengerDriverRe.model_validate(row, from_attributes=True) for row in models_pas]
             query_or = (
                 select(OtherRoute)
                 .options(joinedload(OtherRoute.organization))
@@ -186,21 +207,26 @@ class UtilityFunction:
             result_or = await session.execute(query_or)
             models_or = result_or.unique().scalars().all()
             dto_or = [FullOtherRouteDriverRe.model_validate(row, from_attributes=True) for row in models_or]
-            list_id_point_forward = []
-            list_id_point_away = []
-            id_point_driver = await UtilityFunction.get_id_point_of_driver(id_driver)
-            id_point_factory = await UtilityFunction.get_id_point_factory()
-            list_id_point_forward.append(id_point_driver)
-            list_id_point_forward.extend([i.people.id_point for i in dto_passenger if i.where_drive == 1])
-            list_id_point_forward.append(id_point_factory)
-            list_id_point_forward.extend([i.organization.id_point for i in dto_or if i.where_drive == 3])
-            list_id_point_away.extend([i.organization.id_point for i in dto_or if i.where_drive == 4])
-            list_id_point_away.append(id_point_factory)
-            list_id_point_away.extend([i.people.id_point for i in dto_passenger if i.where_drive == 2])
-            list_id_point_away.append(id_point_driver)
-            length_route_forward = await UtilityFunction.get_route_length(list_id_point_forward)
-            length_route_away = await UtilityFunction.get_route_length(list_id_point_away)
-            return dto_passenger, dto_or, length_route_forward, list_id_point_forward, length_route_away, list_id_point_away
+            point_driver = await UtilityFunction.get_id_point_of_driver(id_driver)
+            point_factory = await UtilityFunction.get_id_point_factory()
+            query_driver = (
+                select(Driver.where_drive)
+                .filter(Driver.id_driver == id_driver)
+            )
+            result_driver = await session.execute(query_driver)
+            models_driver = result_driver.unique().scalars().all()
+            if models_driver[0] == 1:
+                point_forward = await UtilityFunction.build_forward(point_driver, point_factory, dto_pas, dto_or)
+                point_away = []
+            elif models_driver[0] == 2:
+                point_forward = []
+                point_away = await UtilityFunction.build_away(point_driver, point_factory, dto_pas, dto_or)
+            else:
+                point_forward = await UtilityFunction.build_forward(point_driver, point_factory, dto_pas, dto_or)
+                point_away = await UtilityFunction.build_away(point_driver, point_factory, dto_pas, dto_or)
+            length_route_forward = await UtilityFunction.get_route_length(point_forward)
+            length_route_away = await UtilityFunction.get_route_length(point_away)
+            return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
 
 
 class DataPatch:
@@ -420,7 +446,8 @@ class DataLoads:
             return {
                 "id_driver": driver.id_driver,
                 "id_people": driver.id_people,
-                "date_trip": driver.date_trip
+                "date_trip": driver.date_trip,
+                "where_drive": driver.where_drive
             }
 
     @classmethod
@@ -578,6 +605,8 @@ class DataGet:
             query = (
                 select(WhereDrive)
                 .options(selectinload(WhereDrive.passengers))
+                .options(selectinload(WhereDrive.other_routes))
+                .options(selectinload(WhereDrive.drivers))
             )
             result = await session.execute(query)
             models = result.unique().scalars().all()
@@ -649,8 +678,9 @@ class DataGet:
             query = (
                 select(Driver)
                 .options(joinedload(Driver.people))
+                .options(joinedload(Driver.wd))
                 .filter(Driver.date_trip == now_date_trip)
-                .limit(10)
+                .limit(100)
             )
             result = await session.execute(query)
             models = result.unique().scalars().all()
@@ -663,7 +693,7 @@ class DataGet:
             query = (
                 select(Driver)
                 .options(joinedload(Driver.people))
-                .limit(10)
+                .options(joinedload(Driver.wd))
             )
             result = await session.execute(query)
             models = result.unique().scalars().all()

@@ -177,6 +177,7 @@ class WhereDrive(Base):
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
+    drivers: Mapped[list['Driver']] = relationship(back_populates='wd')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='wd')
     other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='wd')
 
@@ -231,7 +232,8 @@ class Driver(Base):
     id_driver: Mapped[intpk]
     id_people: Mapped[people_fk]
     date_trip: Mapped[date_trip]
-    __table_args__ = (UniqueConstraint('id_people', 'date_trip', name='people_date_uc'),)
+    where_drive: Mapped[wd_fk]
+    __table_args__ = (UniqueConstraint('id_driver', 'id_people', 'date_trip', name='people_date_uc'),)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
@@ -239,8 +241,9 @@ class Driver(Base):
     people: Mapped['People'] = relationship(back_populates='drivers')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='driver')
     other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='driver')
+    wd: Mapped['WhereDrive'] = relationship(back_populates='drivers')
 
-    repr_cols_num = 3
+    repr_cols_num = 4
     repr_cols = tuple('created_on', )
 
 

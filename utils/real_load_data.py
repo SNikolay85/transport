@@ -134,6 +134,7 @@ async def load_db(data_trans):
                 id_driver=record['fields']['id_driver'],
                 id_people=record['fields']['driver'],
                 date_trip=format_date(date=record['fields']['date']),
+                where_drive=record['fields']['where_drive'],
                 created_on=format_date(date_time=record['fields']['created_on']),
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )

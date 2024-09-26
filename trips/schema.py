@@ -87,6 +87,8 @@ class FullWhereDrive(WhereDriveAdd):
 
 class FullWhereDriveRe(FullWhereDrive):
     passengers: list['FullPassenger']
+    other_routes: list['FullOtherRoute']
+    drivers: list['FullDriver']
 
 
 # --------------------------
@@ -193,6 +195,7 @@ class FullCarRe(FullCar):
 class DriverAdd(BaseModel):
     id_people: int
     date_trip: date
+    where_drive: int
 
 
 class FullDriver(DriverAdd):
@@ -201,6 +204,7 @@ class FullDriver(DriverAdd):
 
 class FullDriverRe(FullDriver):
     people: 'FullPeople'
+    wd: 'FullWhereDrive'
 
 
 # --------------------------

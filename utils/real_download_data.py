@@ -113,6 +113,7 @@ async def download_all():
         dict_temp['fields']['id_driver'] = i.id_driver
         dict_temp['fields']['driver'] = i.id_people
         dict_temp['fields']['date'] = str(i.date_trip)
+        dict_temp['fields']['where_drive'] = i.where_drive
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)

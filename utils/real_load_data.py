@@ -114,6 +114,7 @@ async def load_db(data_trans):
                 id_point=record['fields']['id_point'],
                 id_position=record['fields']['id_position'],
                 driving_licence=record['fields'].setdefault('driving_licence', None),
+                ppr_card=record['fields'].setdefault('ppr_card', None),
                 created_on=format_date(date_time=record['fields']['created_on']),
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )

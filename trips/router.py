@@ -249,9 +249,16 @@ async def get_other_route():
     other_routes = await DataGet.find_all_other_route()
     return {'other_routes': other_routes}
 
+
 @router_refueling.post('/')
 async def add_refueling(refueling: Annotated[RefuelingAdd, Depends()]):
     refueling_data = await DataLoads.add_refueling(refueling)
+    return refueling_data
+
+
+@router_refueling.post('/auto/')
+async def add_refueling_auto():
+    refueling_data = await DataLoads.add_refueling_auto()
     return refueling_data
 
 

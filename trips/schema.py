@@ -111,6 +111,7 @@ class PeopleAdd(BaseModel):
     id_point: int
     id_position: int
     driving_licence: Optional[str] = None
+    ppr_card: Optional[str] = None
 
 
 class PeopleMin(BaseModel):

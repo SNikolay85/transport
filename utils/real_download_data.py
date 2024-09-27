@@ -75,6 +75,7 @@ async def download_all():
         dict_temp['fields']['id_point'] = i.id_point
         dict_temp['fields']['id_position'] = i.id_position
         dict_temp['fields']['driving_licence'] = i.driving_licence
+        dict_temp['fields']['ppr_card'] = i.ppr_card
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)

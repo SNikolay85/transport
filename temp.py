@@ -2,7 +2,8 @@ import asyncio
 from hashlib import md5
 from pprint import pprint
 from typing import Optional
-
+import requests
+from pydantic import BaseModel
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select
@@ -13,22 +14,118 @@ from datetime import datetime, date
 # selectinload for one-to-many, many-to-many
 from typing_extensions import Annotated
 
-from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
-from trips.models import Session, Point, Car, Driver, People, Position
-from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe
-
+from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PPR
+from trips.models import Session, Point, Car, Driver, People, Position, Refueling, Fuel
+from trips.reposit import UtilityFunction
+from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe, FullPeople, \
+    FullFuel, FullRefuelingRe, FullRefueling
 
 from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
+#
+# date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
+# date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
+
+
+def ppr(date_from, date_to, data_format='json'):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': PPR
+    }
+    data = {'dateFrom': date_from, 'dateTo': date_to, 'format': data_format}
+    res = requests.get(f'https://online.petrolplus.ru/api/public-api/v2/transactions',
+                       data,
+                       headers=headers).json()
+    return res['transactions']
 
 
 
+#print(date_start, date_now)
+
+#pprint([{'date': i['date'], 'quantity': i['amount']} for i in ppr(date_start, date_now)])
+#print(type(datetime.strptime('2024-09-01', '%Y-%m-%d').date()))
+async def peoples(ppr_card):
+    async with Session() as session:
+        q = (
+            select(People.id_people)
+            .filter(People.ppr_card == ppr_card)
+        )
+        result = await session.execute(q)
+        models = result.unique().scalars().first()
+        return models
+
+async def fuels(name):
+    async with Session() as session:
+        q = (
+            select(Fuel.id_fuel)
+            .filter(Fuel.name_fuel == name)
+        )
+        result = await session.execute(q)
+        models = result.unique().scalars().first()
+        return models
+
+#print(asyncio.run(dddd()))
+
+async def add_refueling(ppr, peoples, fuels):
+    date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
+    date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
+    hh = []
+    async with Session() as session:
+        query = (
+            select(Refueling)
+            .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
+            .filter(Refueling.date_refueling >= datetime.strptime(date_start, '%Y-%m-%d').date())
+        )
+        result = await session.execute(query)
+        models = result.unique().scalars().all()
+        dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+        ccx = [{
+            'id_fuel': i.fuel.name_fuel,
+            'id_people': i.people.ppr_card,
+            'quantity': i.quantity,
+            'date_refueling': str(i.date_refueling)} for i in dto]
+        ppr = [{
+                'id_fuel': i['serviceName'],
+                'id_people': str(i['cardNum']),
+                'quantity': i['amount'],
+                'date_refueling': i['date'][:10]} for i in ppr(date_start, date_now)]
+        for i in ppr:
+            if i not in ccx:
+                i['id_fuel'] = await fuels(i['id_fuel'])
+                i['id_people'] = await peoples(i['id_people'])
+                i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d').date()
+                # datetime.strptime(date_start, '%Y-%m-%d').date()
+                hh.append(i)
+        query = select(Refueling.id_refueling)
+        result = await session.execute(query)
+        models = result.unique().scalars().all()
+        refuelings = []
+        count_id = await UtilityFunction.get_id(models)
+        for i in hh:
+            refuelings.append(Refueling(**(dict(i)), id_refueling=count_id))
+            count_id += 1
+        session.add_all(refuelings)
+        await session.commit()
+        # data = {'id_fuel': re
+    # id_people: int
+    # quantity: float
+    # date_refueling: date'}
+    #
+    #     refueling = Refueling(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
+    #     session.add(refueling)
+    #     await session.flush()
+    #     await session.commit()
+        return refuelings
+
+
+print(asyncio.run(add_refueling(ppr, peoples, fuels)))
+#print(type(asyncio.run(add_refueling(ppr))[0]['quantity']))
 async def my_round(num):
     return num if num % 5 == 0 else num + (5 - (num % 5))
 
 
-print(datetime.strptime('2024-09-02 23:59:59.999999+00:00',
-                  '%Y-%m-%d %H:%M:%S.%f%z'))
+#print(datetime.strptime('2024-09-02 23:59:59.999999+00:00',
+           #       '%Y-%m-%d %H:%M:%S.%f%z'))
 
 
 app = FastAPI()

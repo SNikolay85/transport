@@ -192,6 +192,7 @@ class People(Base):
     id_point: Mapped[point_fk]
     id_position: Mapped[position_fk]
     driving_licence: Mapped[Optional[str50]] = mapped_column(unique=True)
+    ppr_card: Mapped[Optional[str]] = mapped_column(unique=True)
     __table_args__ = (UniqueConstraint('first_name', 'last_name', 'patronymic', 'id_point', 'id_position', name='people_uc'),)
 
     created_on: Mapped[created_on]

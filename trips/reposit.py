@@ -1,9 +1,10 @@
+from datetime import datetime
 from hashlib import md5
 
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
-from config import TOKEN_ORS, SALT
+from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -44,6 +45,37 @@ class UtilityFunction:
         loc = Nominatim(user_agent="GetLoc")
         get_location = loc.geocode(name)
         return get_location
+
+    @staticmethod
+    def ppr(date_from, date_to, card_number=None, data_format='json'):
+        url = r'https://online.petrolplus.ru/api/public-api/v2'
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': PPR
+        }
+
+        data = {'dateFrom': date_from, 'dateTo': date_to, 'format': data_format}
+        if card_number is None:
+            res = requests.get(f'{url}/transactions', data, headers=headers).json()
+        else:
+            res = requests.get(f'{url}/cards/{card_number}/transactions', data, headers=headers).json()
+        return res['transactions']
+
+    @staticmethod
+    async def get_id_people(ppr_card):
+        async with Session() as session:
+            query = select(People.id_people).filter(People.ppr_card == ppr_card)
+            result = await session.execute(query)
+            id_people = result.unique().scalars().first()
+            return id_people
+
+    @staticmethod
+    async def get_id_fuel(name_fuel):
+        async with Session() as session:
+            query = select(Fuel.id_fuel).filter(Fuel.name_fuel == name_fuel)
+            result = await session.execute(query)
+            id_fuel = result.unique().scalars().first()
+            return id_fuel
 
     @staticmethod
     def matrix(locations: list):
@@ -414,7 +446,8 @@ class DataLoads:
                 "patronymic": people.patronymic,
                 "id_point": people.id_point,
                 "id_position": people.id_position,
-                "driving_licence": people.driving_licence
+                "driving_licence": people.driving_licence,
+                "ppr_card": people.ppr_card
             }
 
     @classmethod
@@ -503,6 +536,50 @@ class DataLoads:
                 "quantity": refueling.quantity,
                 "date_refueling": refueling.date_refueling
             }
+
+    @classmethod
+    async def add_refueling_auto(cls) -> list:
+        date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
+        date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
+        list_new_refueligs = []
+        async with (Session() as session):
+            query = (
+                select(Refueling)
+                .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
+                .filter(Refueling.date_refueling >= datetime.strptime(date_start, '%Y-%m-%d').date())
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+            ccx = [{
+                'id_fuel': i.fuel.name_fuel,
+                'id_people': i.people.ppr_card,
+                'quantity': i.quantity,
+                'date_refueling': str(i.date_refueling)} for i in dto]
+            ppr = [{
+                'id_fuel': i['serviceName'],
+                'id_people': str(i['cardNum']),
+                'quantity': i['amount'],
+                'date_refueling': i['date'][:10]} for i in UtilityFunction.ppr(date_start, date_now)]
+            for i in ppr:
+                if i not in ccx:
+                    i['id_fuel'] = await UtilityFunction.get_id_fuel(i['id_fuel'])
+                    i['id_people'] = await UtilityFunction.get_id_people(i['id_people'])
+                    i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d').date()
+                    list_new_refueligs.append(i)
+            query = select(Refueling.id_refueling)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            refuelings = []
+            count_id = await UtilityFunction.get_id(models)
+            for i in list_new_refueligs:
+                refuelings.append(Refueling(**(dict(i)), id_refueling=count_id))
+                count_id += 1
+            session.add_all(refuelings)
+            await session.flush()
+            await session.commit()
+            return refuelings
+
 
 
 

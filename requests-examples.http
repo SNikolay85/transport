@@ -1,6 +1,17 @@
 # примеры API-запросов
 
-@baseUrl = http://localhost:8000
+# @baseUrl = http://localhost:8000
+@baseUrl = https://online.petrolplus.ru/
+
+### GET {{baseUrl}}/api/public-api/v2/cards/3001331071/transactions
+Content-Type: application/json
+
+{
+    "Authorization": "NIhMlaThzgqGCgksZGSpZlkNfaiVWEyW",
+    "dateFrom": "2020-05-01",
+    "dateTo": "2020-05-03",
+    "format": "JSON"
+}
 
 ###
 # просмотр объявления

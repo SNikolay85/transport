@@ -1,4 +1,6 @@
 import asyncio
+import json
+import os
 from hashlib import md5
 from pprint import pprint
 from typing import Optional
@@ -38,12 +40,19 @@ def ppr(date_from, date_to, data_format='json'):
                        headers=headers).json()
     return res['transactions']
 
+ss ='2024-09-29 12:08'
+pp = '2024-09-29T11:36:47.000'
 
+date_now = datetime.strptime(ss, '%Y-%m-%d %H:%M')
+print(date_now, type(date_now))
 
-#print(date_start, date_now)
+print(f'{pp[:10]} {pp[11:19]}')
+date_now = datetime.strptime(f'{pp[:10]} {pp[11:23]}', '%Y-%m-%d %H:%M:%S.%f')
+print(date_now, type(date_now))
+
 
 #pprint([{'date': i['date'], 'quantity': i['amount']} for i in ppr(date_start, date_now)])
-#print(type(datetime.strptime('2024-09-01', '%Y-%m-%d').date()))
+# print(datetime.strptime('2024-09-01', '%Y-%m-%d %H:%M').date())
 async def peoples(ppr_card):
     async with Session() as session:
         q = (
@@ -73,39 +82,46 @@ async def add_refueling(ppr, peoples, fuels):
     async with Session() as session:
         query = (
             select(Refueling)
-            .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
+            # .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
             .filter(Refueling.date_refueling >= datetime.strptime(date_start, '%Y-%m-%d').date())
         )
         result = await session.execute(query)
         models = result.unique().scalars().all()
-        dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
-        ccx = [{
-            'id_fuel': i.fuel.name_fuel,
-            'id_people': i.people.ppr_card,
-            'quantity': i.quantity,
-            'date_refueling': str(i.date_refueling)} for i in dto]
-        ppr = [{
-                'id_fuel': i['serviceName'],
-                'id_people': str(i['cardNum']),
-                'quantity': i['amount'],
-                'date_refueling': i['date'][:10]} for i in ppr(date_start, date_now)]
-        for i in ppr:
-            if i not in ccx:
-                i['id_fuel'] = await fuels(i['id_fuel'])
-                i['id_people'] = await peoples(i['id_people'])
-                i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d').date()
-                # datetime.strptime(date_start, '%Y-%m-%d').date()
-                hh.append(i)
-        query = select(Refueling.id_refueling)
-        result = await session.execute(query)
-        models = result.unique().scalars().all()
-        refuelings = []
-        count_id = await UtilityFunction.get_id(models)
-        for i in hh:
-            refuelings.append(Refueling(**(dict(i)), id_refueling=count_id))
-            count_id += 1
-        session.add_all(refuelings)
-        await session.commit()
+        sum_quantity = 0
+        for i in models:
+            sum_quantity += i.quantity
+        sum_ppr = 0
+        for i in ppr(date_start, date_now):
+            sum_ppr += i['amount']
+        list_date = [i['date'] for i in ppr(date_start, date_now)]
+        #dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+        # ccx = [{
+        #     'id_fuel': i.fuel.name_fuel,
+        #     'id_people': i.people.ppr_card,
+        #     'quantity': i.quantity,
+        #     'date_refueling': str(i.date_refueling)} for i in dto]
+        # ppr = [{
+        #         'id_fuel': i['serviceName'],
+        #         'id_people': str(i['cardNum']),
+        #         'quantity': i['amount'],
+        #         'date_refueling': i['date'][:10]} for i in ppr(date_start, date_now)]
+        # for i in ppr:
+        #     if i not in ccx:
+        #         i['id_fuel'] = await fuels(i['id_fuel'])
+        #         i['id_people'] = await peoples(i['id_people'])
+        #         i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d').date()
+        #         # datetime.strptime(date_start, '%Y-%m-%d').date()
+        #         hh.append(i)
+        # query = select(Refueling.id_refueling)
+        # result = await session.execute(query)
+        # models = result.unique().scalars().all()
+        # refuelings = []
+        # count_id = await UtilityFunction.get_id(models)
+        # for i in hh:
+        #     refuelings.append(Refueling(**(dict(i)), id_refueling=count_id))
+        #     count_id += 1
+        # session.add_all(refuelings)
+        # await session.commit()
         # data = {'id_fuel': re
     # id_people: int
     # quantity: float
@@ -115,7 +131,8 @@ async def add_refueling(ppr, peoples, fuels):
     #     session.add(refueling)
     #     await session.flush()
     #     await session.commit()
-        return refuelings
+        return sum_quantity, sum_ppr, list_date[0]
+
 
 
 print(asyncio.run(add_refueling(ppr, peoples, fuels)))

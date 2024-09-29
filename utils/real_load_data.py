@@ -25,10 +25,13 @@ async def reboot_tables():
     await create_tables()
 
 
-def format_date(date_time=None, date=None):
-    if date is None:
+def format_date(date_cut=None, date_time=None, date=None):
+    if date is not None:
+        return datetime.strptime(date, '%Y-%m-%d').date()
+    elif date_time is not None:
         return datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S.%f%z')
-    return datetime.strptime(date, '%Y-%m-%d').date()
+    else:
+        return datetime.strptime(date_cut, '%Y-%m-%d %H:%M:%S')
 
 
 async def load_db(data_trans):
@@ -171,7 +174,7 @@ async def load_db(data_trans):
                 id_fuel=record['fields']['fuel'],
                 id_people=record['fields']['people'],
                 quantity=record['fields']['quantity'],
-                date_refueling=format_date(date=record['fields']['date']),
+                date_refueling=format_date(date_cut=record['fields']['date']),
                 created_on=format_date(date_time=record['fields']['created_on']),
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )

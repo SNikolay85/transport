@@ -541,7 +541,8 @@ class DataLoads:
     async def add_refueling_auto(cls) -> list:
         date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
         date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
-        list_new_refueligs = []
+
+        list_new_refueling = []
         async with (Session() as session):
             query = (
                 select(Refueling)
@@ -555,30 +556,30 @@ class DataLoads:
                 'id_fuel': i.fuel.name_fuel,
                 'id_people': i.people.ppr_card,
                 'quantity': i.quantity,
-                'date_refueling': str(i.date_refueling)} for i in dto]
+                'date_refueling': f"{str(i.date_refueling)[:19]}"} for i in dto]
             ppr = [{
                 'id_fuel': i['serviceName'],
                 'id_people': str(i['cardNum']),
                 'quantity': i['amount'],
-                'date_refueling': i['date'][:10]} for i in UtilityFunction.ppr(date_start, date_now)]
+                'date_refueling': f"{i['date'][:10]} {i['date'][11:19]}"} for i in UtilityFunction.ppr(date_start, date_now)]
             for i in ppr:
                 if i not in ccx:
                     i['id_fuel'] = await UtilityFunction.get_id_fuel(i['id_fuel'])
                     i['id_people'] = await UtilityFunction.get_id_people(i['id_people'])
-                    i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d').date()
-                    list_new_refueligs.append(i)
+                    i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d %H:%M:%S').utctimetuple()
+                    list_new_refueling.append(i)
             query = select(Refueling.id_refueling)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            refuelings = []
+            refueling = []
             count_id = await UtilityFunction.get_id(models)
-            for i in list_new_refueligs:
-                refuelings.append(Refueling(**(dict(i)), id_refueling=count_id))
+            for i in list_new_refueling:
+                refueling.append(Refueling(**(dict(i)), id_refueling=count_id))
                 count_id += 1
-            session.add_all(refuelings)
+            session.add_all(refueling)
             await session.flush()
             await session.commit()
-            return refuelings
+            return refueling
 
 
 

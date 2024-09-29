@@ -1,3 +1,4 @@
+from time import timezone
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -34,6 +35,7 @@ str100 = Annotated[str, 100]
 str20 = Annotated[str, 20]
 str50 = Annotated[str, 50]
 date_trip = Annotated[date, mapped_column(Date)]
+date_refueling = Annotated[datetime, mapped_column(DateTime)]
 
 created_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now())]
 updated_on = Annotated[datetime, mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())]
@@ -297,7 +299,8 @@ class Refueling(Base):
     id_fuel: Mapped[fuel_fk]
     id_people: Mapped[people_fk]
     quantity: Mapped[float] = mapped_column(Float(precision=2, asdecimal=2,decimal_return_scale=2), nullable=False)
-    date_refueling: Mapped[date_trip]
+    date_refueling: Mapped[date_refueling]
+    __table_args__ = (UniqueConstraint('id_fuel', 'id_people', 'quantity', 'date_refueling', name='refueling_uc'),)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]

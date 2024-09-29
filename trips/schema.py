@@ -293,7 +293,7 @@ class RefuelingAdd(BaseModel):
     id_fuel: int
     id_people: int
     quantity: float
-    date_refueling: date
+    date_refueling: datetime
 
 
 class FullRefueling(RefuelingAdd):

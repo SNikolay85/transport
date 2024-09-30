@@ -15,7 +15,7 @@ from trips.router import router_fuel as fuel, router_wd as wd, router_organizati
 from trips.router import router_other_route as other_route
 
 from trips.pages.router import router_page
-
+#SALT=djjfjj53jjd@djdjd
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

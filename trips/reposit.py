@@ -566,7 +566,7 @@ class DataLoads:
                 if i not in ccx:
                     i['id_fuel'] = await UtilityFunction.get_id_fuel(i['id_fuel'])
                     i['id_people'] = await UtilityFunction.get_id_people(i['id_people'])
-                    i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d %H:%M:%S').utctimetuple()
+                    i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d %H:%M:%S')
                     list_new_refueling.append(i)
             query = select(Refueling.id_refueling)
             result = await session.execute(query)

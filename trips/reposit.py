@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
 from config import TOKEN_ORS, SALT, PPR
-from sqlalchemy import select, or_, update, delete
+from sqlalchemy import select, or_, and_, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
@@ -582,8 +582,6 @@ class DataLoads:
             return refueling
 
 
-
-
 class DataGet:
     @staticmethod
     async def all_name_point():
@@ -815,5 +813,52 @@ class DataGet:
             models = result.scalars().all()
             dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
             return dto
+
+    @staticmethod
+    async def count_refueling_to_date(date_start, date_finish) -> float:
+        # date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
+        # date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
+
+        list_new_refueling = []
+        async with (Session() as session):
+            query = (
+                select(Refueling.quantity)
+                .filter(and_(Refueling.date_refueling >= datetime.strptime(date_start, '%Y-%m-%d').date(),
+                             Refueling.date_refueling <= datetime.strptime(date_finish, '%Y-%m-%d').date()))
+            )
+            result = await session.execute(query)
+            models = result.scalars().all()
+            count = sum(models)
+            # dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+            # ccx = [{
+            #     'id_fuel': i.fuel.name_fuel,
+            #     'id_people': i.people.ppr_card,
+            #     'quantity': i.quantity,
+            #     'date_refueling': f"{str(i.date_refueling)[:19]}"} for i in dto]
+            # ppr = [{
+            #     'id_fuel': i['serviceName'],
+            #     'id_people': str(i['cardNum']),
+            #     'quantity': i['amount'],
+            #     'date_refueling': f"{i['date'][:10]} {i['date'][11:19]}"} for i in
+            #     UtilityFunction.ppr(date_start, date_now)]
+            # for i in ppr:
+            #     if i not in ccx:
+            #         i['id_fuel'] = await UtilityFunction.get_id_fuel(i['id_fuel'])
+            #         i['id_people'] = await UtilityFunction.get_id_people(i['id_people'])
+            #         i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d %H:%M:%S')
+            #         list_new_refueling.append(i)
+            # query = select(Refueling.id_refueling)
+            # result = await session.execute(query)
+            # models = result.unique().scalars().all()
+            # refueling = []
+            # count_id = await UtilityFunction.get_id(models)
+            # for i in list_new_refueling:
+            #     refueling.append(Refueling(**(dict(i)), id_refueling=count_id))
+            #     count_id += 1
+            # session.add_all(refueling)
+            # await session.flush()
+            # await session.commit()
+            return count
+
 
 

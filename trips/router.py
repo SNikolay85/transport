@@ -267,3 +267,9 @@ async def get_refueling():
     refuelings = await DataGet.find_all_refuelings()
     return {'refuelings': refuelings}
 
+
+@router_refueling.get('/count/{date_start}/{date_finish}')
+async def get_refueling(date_start, date_finish):
+    count_refueling = await DataGet.count_refueling_to_date(date_start, date_finish)
+    return {'refuelings': count_refueling}
+

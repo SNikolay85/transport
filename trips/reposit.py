@@ -318,19 +318,12 @@ class DataPatch:
             )
             result = await session.execute(query)
             update_route = result.fetchone()
-            if await UtilityFunction.check_double_route({'id_start_route': update_route[1], 'id_finish_route': update_route[2]}):
-                route_data = await DataLoads.add_route(route)
-                return {
-                    "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} c расстоянием {route_data['distance']}, добавлено в базу"}
-            else:
-                return {
-                    "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} уже есть в базе"}
             await session.commit()
+            name_route = await UtilityFunction.get_name_point(update_route)
             if update_route is not None:
-                return (f'Изменения для id {update_route[0]}: '
-                        f'Начало - {update_route[1]}',
-                        f'Конец - {update_route[2]}',
-                        f'Дистанция - {update_route[3]}')
+                return (f'Изменения для id {update_route[0]}: ',
+                        f'У маршрута: {name_route[0].name_point} -  {name_route[1].name_point} изменилось растояние',
+                        f'Новое значение: {update_route[3]} км')
 
 
 class DataLoads:
@@ -358,13 +351,17 @@ class DataLoads:
 
     @classmethod
     async def add_route(cls, data: RouteAdd) -> dict:
-        geo_route = await UtilityFunction.get_geo(data)
-        dist = UtilityFunction.my_round(int(UtilityFunction.matrix(geo_route) / 1000))
+        if data.distance is None:
+            geo_route = await UtilityFunction.get_geo(data)
+            dist = UtilityFunction.my_round(int(UtilityFunction.matrix(geo_route) / 1000))
+        else:
+            dist = data.distance
+        data.distance = dist
         async with Session() as session:
             query = select(Route.id_route)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            route = Route(**(data.model_dump()), distance=dist, id_route=await UtilityFunction.get_id(models))
+            route = Route(**(data.model_dump()), id_route=await UtilityFunction.get_id(models))
             session.add(route)
             await session.flush()
             await session.commit()

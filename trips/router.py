@@ -90,8 +90,6 @@ async def add_route(route: Annotated[RouteAdd, Depends()]):
 async def change_route(id_route: int, route: Annotated[RouteUpdate, Depends()]):
     if route.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
-    #name_route = await UtilityFunction.get_name_point(route)
-
     route_data = await DataPatch.update_route(id_route, route)
     return route_data
 

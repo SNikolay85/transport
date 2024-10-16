@@ -13,7 +13,7 @@ from trips.models import WhereDrive, People, Driver, Passenger, Refueling, Other
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate, PointUpdate
+from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate
 
 from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
@@ -306,6 +306,31 @@ class DataPatch:
                 return (f'Изменения для id {update_organization[0]}: '
                         f'Название - {update_organization[1]}, '
                         f'id адреса - {update_organization[2]}')
+
+    @classmethod
+    async def update_route(cls, id_route: int, data: RouteUpdate):
+        async with Session() as session:
+            query = (
+                update(Route)
+                .where(Route.id_route == id_route)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Route.id_route, Route.id_start_point, Route.id_finish_point, Route.distance)
+            )
+            result = await session.execute(query)
+            update_route = result.fetchone()
+            if await UtilityFunction.check_double_route({'id_start_route': update_route[1], 'id_finish_route': update_route[2]}):
+                route_data = await DataLoads.add_route(route)
+                return {
+                    "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} c расстоянием {route_data['distance']}, добавлено в базу"}
+            else:
+                return {
+                    "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} уже есть в базе"}
+            await session.commit()
+            if update_route is not None:
+                return (f'Изменения для id {update_route[0]}: '
+                        f'Начало - {update_route[1]}',
+                        f'Конец - {update_route[2]}',
+                        f'Дистанция - {update_route[3]}')
 
 
 class DataLoads:

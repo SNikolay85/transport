@@ -7,7 +7,7 @@ from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate, PointUpdate
+from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate
 
 from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch
 
@@ -84,6 +84,16 @@ async def add_route(route: Annotated[RouteAdd, Depends()]):
     else:
         return {
             "message": f"Маршрут {name_route[0].name_point} - {name_route[1].name_point} уже есть в базе"}
+
+
+@router_route.patch('/{id_route}')
+async def change_route(id_route: int, route: Annotated[RouteUpdate, Depends()]):
+    if route.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    #name_route = await UtilityFunction.get_name_point(route)
+
+    route_data = await DataPatch.update_route(id_route, route)
+    return route_data
 
 
 @router_route.get('/')

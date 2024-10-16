@@ -282,6 +282,12 @@ class FullRoute(RouteAdd):
     distance: Optional[int] = None
 
 
+class RouteUpdate(BaseModel):
+    id_start_point: Optional[int] = None
+    id_finish_point: Optional[int] = None
+    distance: Optional[int] = None
+
+
 class FullRouteRe(FullRoute):
     point_start: 'FullPoint'
     point_finish: 'FullPoint'

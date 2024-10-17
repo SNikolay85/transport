@@ -2,7 +2,7 @@ from datetime import datetime
 from hashlib import md5
 
 from fastapi import HTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 
 from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, and_, update, delete
@@ -13,7 +13,8 @@ from trips.models import WhereDrive, People, Driver, Passenger, Refueling, Other
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate
+from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
+from trips.schema import CarUpdate, PositionUpdate, DriverUpdate, CarFuelUpdate, OtherRouteUpdate, PassengerUpdate
 
 from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
@@ -324,6 +325,172 @@ class DataPatch:
                 return (f'Изменения для id {update_route[0]}: ',
                         f'У маршрута: {name_route[0].name_point} -  {name_route[1].name_point} изменилось растояние',
                         f'Новое значение: {update_route[3]} км')
+
+    @classmethod
+    async def update_fuel(cls, id_fuel: int, data: FuelUpdate):
+        async with Session() as session:
+            query = (
+                update(Fuel)
+                .where(Fuel.id_fuel == id_fuel)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Fuel.id_fuel, Fuel.name_fuel)
+            )
+            result = await session.execute(query)
+            update_fuel = result.fetchone()
+            await session.commit()
+            if update_fuel is not None:
+                return (f'Изменения для id {update_fuel[0]}: ',
+                        f'Новое значение: {update_fuel[1]}')
+
+    @classmethod
+    async def update_people(cls, id_people: int, data: PeopleUpdate):
+        async with Session() as session:
+            query = (
+                update(People)
+                .where(People.id_people == id_people)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(People.id_people, People.first_name, People.last_name, People.patronymic,
+                           People.id_point, People.id_position, People.driving_licence, People.ppr_card)
+            )
+            result = await session.execute(query)
+            update_people = result.fetchone()
+            await session.commit()
+            if update_people is not None:
+                return (f'Изменения для id {update_people[0]}: ',
+                        f'Новое значение: {update_people}')
+
+    @classmethod
+    async def update_wd(cls, id_wd: int, data: WhereDriveUpdate):
+        async with Session() as session:
+            query = (
+                update(WhereDrive)
+                .where(WhereDrive.id_wd == id_wd)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(WhereDrive.id_wd, WhereDrive.name_wd)
+            )
+            result = await session.execute(query)
+            update_wd = result.fetchone()
+            await session.commit()
+            if update_wd is not None:
+                return (f'Изменения для id {update_wd[0]}: ',
+                        f'Новое значение: {update_wd[1]}')
+
+    @classmethod
+    async def update_position(cls, id_position: int, data: PositionUpdate):
+        async with Session() as session:
+            query = (
+                update(Position)
+                .where(Position.id_position == id_position)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Position.id_position, Position.name_position)
+            )
+            result = await session.execute(query)
+            update_position = result.fetchone()
+            await session.commit()
+            if update_position is not None:
+                return (f'Изменения для id {update_position[0]}: ',
+                        f'Новое значение: {update_position[1]}')
+
+    @classmethod
+    async def update_driver(cls, id_driver: int, data: DriverUpdate):
+        async with Session() as session:
+            query = (
+                update(Driver)
+                .where(Driver.id_driver == id_driver)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Driver.id_driver, Driver.id_people, Driver.date_trip, Driver.where_drive)
+            )
+            result = await session.execute(query)
+            update_driver = result.fetchone()
+            await session.commit()
+            if update_driver is not None:
+                return (f'Изменения для id {update_driver[0]}: ',
+                        f'Новое значение: {update_driver}')
+
+    @classmethod
+    async def update_car(cls, id_car: int, data: CarUpdate):
+        async with Session() as session:
+            query = (
+                update(Car)
+                .where(Car.id_car == id_car)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Car.id_car, Car.name_car, Car.number_of_car, Car.average_consumption, Car.id_people)
+            )
+            result = await session.execute(query)
+            update_car = result.fetchone()
+            await session.commit()
+            if update_car is not None:
+                return (f'Изменения для id {update_car[0]}: ',
+                        f'Новое значение: {update_car}')
+
+    @classmethod
+    async def update_passenger(cls, id_passenger: int, data: PassengerUpdate):
+        async with Session() as session:
+            query = (
+                update(Passenger)
+                .where(Passenger.id_passenger == id_passenger)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Passenger.id_passenger, Passenger.order, Passenger.id_people,
+                           Passenger.id_driver, Passenger.where_drive)
+            )
+            result = await session.execute(query)
+            update_passenger = result.fetchone()
+            await session.commit()
+            if update_passenger is not None:
+                return (f'Изменения для id {update_passenger[0]}: ',
+                        f'Новое значение: {update_passenger}')
+
+    @classmethod
+    async def update_other_route(cls, id_other_route: int, data: OtherRouteUpdate):
+        async with Session() as session:
+            query = (
+                update(OtherRoute)
+                .where(OtherRoute.id_other_route == id_other_route)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(OtherRoute.id_other_route, OtherRoute.order, OtherRoute.id_organization,
+                           OtherRoute.id_driver, OtherRoute.where_drive)
+            )
+            result = await session.execute(query)
+            update_other_route = result.fetchone()
+            await session.commit()
+            if update_other_route is not None:
+                return (f'Изменения для id {update_other_route[0]}: ',
+                        f'Новое значение: {update_other_route}')
+
+    @classmethod
+    async def update_car_fuel(cls, id_car_fuel: int, data: CarFuelUpdate):
+        async with Session() as session:
+            query = (
+                update(CarFuel)
+                .where(CarFuel.id_car_fuel == id_car_fuel)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(CarFuel.id_car_fuel, CarFuel.id_car, CarFuel.id_fuel)
+            )
+            result = await session.execute(query)
+            update_car_fuel = result.fetchone()
+            await session.commit()
+            if update_car_fuel is not None:
+                return (f'Изменения для id {update_car_fuel[0]}: ',
+                        f'Новое значение: {update_car_fuel}')
+
+
+class Delete:
+    @classmethod
+    async def del_position(cls, id_position):
+        async with Session() as session:
+            position = select(Position).filter(Position.id_position == id_position)
+            try:
+                result = await session.execute(position)
+                models = result.unique().scalars().one()
+                position = (
+                    delete(Position)
+                    .where(Position.id_position == id_position)
+                )
+                await session.execute(position)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
 
 
 class DataLoads:

@@ -7,9 +7,10 @@ from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate
+from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, WhereDriveUpdate, PeopleUpdate
+from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate
 
-from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch
+from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch, Delete
 
 router_point = APIRouter(prefix='/point', tags=['Point'])
 router_route = APIRouter(prefix='/route', tags=['Route'])
@@ -106,6 +107,14 @@ async def add_fuel(fuel: Annotated[FuelAdd, Depends()]):
     return {"message": f"{fuel_data['name_fuel']}, добавлено в базу"}
 
 
+@router_fuel.patch('/{id_fuel}')
+async def change_fuel(id_fuel: int, fuel: Annotated[FuelUpdate, Depends()]):
+    if fuel.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    fuel_data = await DataPatch.update_fuel(id_fuel, fuel)
+    return fuel_data
+
+
 @router_fuel.get('/')
 async def get_fuel():
     fuels = await DataGet.find_all_fuel()
@@ -116,6 +125,14 @@ async def get_fuel():
 async def add_car(car: Annotated[CarAdd, Depends()]):
     car_data = await DataLoads.add_car(car)
     return {"message": f"{car_data['name_car']}, добавлено в базу"}
+
+
+@router_car.patch('/{id_car}')
+async def change_car(id_car: int, car: Annotated[CarUpdate, Depends()]):
+    if car.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    car_data = await DataPatch.update_car(id_car, car)
+    return car_data
 
 
 @router_car.get('/')
@@ -136,9 +153,25 @@ async def get_car_fuel():
     return {'car_fuels': car_fuels}
 
 
+@router_car_fuel.patch('/{id_car_fuel}')
+async def change_car(id_car_fuel: int, car_fuel: Annotated[CarFuelUpdate, Depends()]):
+    if car_fuel.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    car_fuel_data = await DataPatch.update_car_fuel(id_car_fuel, car_fuel)
+    return car_fuel_data
+
+
 @router_position.post('/')
 async def add_position(position: Annotated[PositionAdd, Depends()]):
     position_data = await DataLoads.add_position(position)
+    return position_data
+
+
+@router_position.patch('/{id_position}')
+async def change_position(id_position: int, position: Annotated[PositionUpdate, Depends()]):
+    if position.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    position_data = await DataPatch.update_position(id_position, position)
     return position_data
 
 
@@ -148,10 +181,27 @@ async def get_position():
     return {'positions': positions}
 
 
+@router_position.delete('/{id_position}')
+async def del_position(id_position: int):
+    position = await Delete.del_position(id_position)
+    if type(position) is str:
+        return position
+    else:
+        return {'message': f'{position.name_position} удалено'}
+
+
 @router_wd.post('/')
 async def add_wd(wd: Annotated[WhereDriveAdd, Depends()]):
     wd_data = await DataLoads.add_wd(wd)
     return {"message": f"{wd_data['name_wd']}, добавлено в базу"}
+
+
+@router_wd.patch('/{id_wd}')
+async def change_wd(id_wd: int, wd: Annotated[WhereDriveUpdate, Depends()]):
+    if wd.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    wd_data = await DataPatch.update_wd(id_wd, wd)
+    return wd_data
 
 
 @router_wd.get('/')
@@ -163,6 +213,14 @@ async def get_wd():
 @router_people.post('/')
 async def add_people(people: Annotated[PeopleAdd, Depends()]):
     people_data = await DataLoads.add_people(people)
+    return people_data
+
+
+@router_people.patch('/{id_people}')
+async def change_people(id_people: int, people: Annotated[PeopleUpdate, Depends()]):
+    if people.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    people_data = await DataPatch.update_people(id_people, people)
     return people_data
 
 
@@ -210,6 +268,14 @@ async def add_driver(driver: Annotated[DriverAdd, Depends()]):
     return driver_data
 
 
+@router_driver.patch('/{id_driver}')
+async def change_driver(id_driver: int, driver: Annotated[DriverUpdate, Depends()]):
+    if driver.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    driver_data = await DataPatch.update_driver(id_driver, driver)
+    return driver_data
+
+
 @router_driver.get('/')
 async def get_driver():
     car_carrier = await DataGet.find_all_car_carrier()
@@ -240,6 +306,14 @@ async def add_passenger(passenger: Annotated[PassengerAdd, Depends()]):
     return passenger_data
 
 
+@router_passenger.patch('/{id_passenger}')
+async def change_passenger(id_passenger: int, passenger: Annotated[PassengerUpdate, Depends()]):
+    if passenger.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    passenger_data = await DataPatch.update_passenger(id_passenger, passenger)
+    return passenger_data
+
+
 @router_passenger.get('/')
 async def get_passenger():
     passengers = await DataGet.find_all_passengers()
@@ -249,6 +323,14 @@ async def get_passenger():
 @router_other_route.post('/')
 async def add_other_route(other_route: Annotated[OtherRouteAdd, Depends()]):
     other_route_data = await DataLoads.add_other_route(other_route)
+    return other_route_data
+
+
+@router_other_route.patch('/{id_other_route}')
+async def change_other_route(id_other_route: int, other_route: Annotated[OtherRouteUpdate, Depends()]):
+    if other_route.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    other_route_data = await DataPatch.update_other_route(id_other_route, other_route)
     return other_route_data
 
 

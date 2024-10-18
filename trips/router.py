@@ -76,6 +76,15 @@ async def get_point():
     return points
 
 
+@router_point.delete('/{id_point}')
+async def del_position(id_point: int):
+    point = await Delete.del_point(id_point)
+    if type(point) is str:
+        return point
+    else:
+        return {'message': f'{point.name_point} удалено'}
+
+
 @router_route.post('/')
 async def add_route(route: Annotated[RouteAdd, Depends()]):
     name_route = await UtilityFunction.get_name_point(route)
@@ -101,6 +110,15 @@ async def get_route():
     return {'routes': routes}
 
 
+@router_route.delete('/{id_route}')
+async def del_position(id_route: int):
+    route = await Delete.del_route(id_route)
+    if type(route) is str:
+        return route
+    else:
+        return {'message': f'{route.id_start_point} - {route.id_finish_point} удалено'}
+
+
 @router_fuel.post('/')
 async def add_fuel(fuel: Annotated[FuelAdd, Depends()]):
     fuel_data = await DataLoads.add_fuel(fuel)
@@ -119,6 +137,15 @@ async def change_fuel(id_fuel: int, fuel: Annotated[FuelUpdate, Depends()]):
 async def get_fuel():
     fuels = await DataGet.find_all_fuel()
     return {'fuels': fuels}
+
+
+@router_fuel.delete('/{id_fuel}')
+async def del_fuel(id_fuel: int):
+    fuel = await Delete.del_fuel(id_fuel)
+    if type(fuel) is str:
+        return fuel
+    else:
+        return {'message': f'{fuel.name_fuel} удалено'}
 
 
 @router_car.post('/')
@@ -141,6 +168,15 @@ async def get_car():
     return {'cars': cars}
 
 
+@router_car.delete('/{id_car}')
+async def del_car(id_car: int):
+    car = await Delete.del_car(id_car)
+    if type(car) is str:
+        return car
+    else:
+        return {'message': f'{car.name_car} удалено'}
+
+
 @router_car_fuel.post('/')
 async def add_car_fuel(car_fuel: Annotated[CarFuelAdd, Depends()]):
     car_fuel_data = await DataLoads.add_car_fuel(car_fuel)
@@ -159,6 +195,15 @@ async def change_car(id_car_fuel: int, car_fuel: Annotated[CarFuelUpdate, Depend
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
     car_fuel_data = await DataPatch.update_car_fuel(id_car_fuel, car_fuel)
     return car_fuel_data
+
+
+@router_car_fuel.delete('/{id_car_fuel}')
+async def del_car_fuel(id_car_fuel: int):
+    car_fuel = await Delete.del_car_fuel(id_car_fuel)
+    if type(car_fuel) is str:
+        return car_fuel
+    else:
+        return {'message': f'{car_fuel.id_car} - {car_fuel.id_fuel} удалено'}
 
 
 @router_position.post('/')
@@ -210,6 +255,15 @@ async def get_wd():
     return {'where_drive': wd}
 
 
+@router_wd.delete('/{id_wd}')
+async def del_wd(id_wd: int):
+    wd = await Delete.del_wd(id_wd)
+    if type(wd) is str:
+        return wd
+    else:
+        return {'message': f'{wd.name_wd} удалено'}
+
+
 @router_people.post('/')
 async def add_people(people: Annotated[PeopleAdd, Depends()]):
     people_data = await DataLoads.add_people(people)
@@ -228,6 +282,15 @@ async def change_people(id_people: int, people: Annotated[PeopleUpdate, Depends(
 async def get_people():
     peoples = await DataGet.find_all_people()
     return {'peoples': peoples}
+
+
+@router_people.delete('/{id_people}')
+async def del_people(id_people: int):
+    people = await Delete.del_people(id_people)
+    if type(people) is str:
+        return people
+    else:
+        return {'message': f'{people.last_name} {people.first_name} удален'}
 
 
 @router_people.get('/driver/')
@@ -262,6 +325,15 @@ async def get_organization():
     return {'organizations': organizations}
 
 
+@router_organization.delete('/{id_organization}')
+async def del_organization(id_organization: int):
+    organization = await Delete.del_organization(id_organization)
+    if type(organization) is str:
+        return organization
+    else:
+        return {'message': f'{organization.name_organization} удалено'}
+
+
 @router_driver.post('/')
 async def add_driver(driver: Annotated[DriverAdd, Depends()]):
     driver_data = await DataLoads.add_driver(driver)
@@ -282,6 +354,15 @@ async def get_driver():
     return {'car_carrier': car_carrier}
 
 
+@router_driver.delete('/{id_driver}')
+async def del_driver(id_driver: int):
+    driver = await Delete.del_driver(id_driver)
+    if type(driver) is str:
+        return driver
+    else:
+        return {'message': f'{driver.id_people} удалено'}
+
+
 @router_driver.get('/{now_date_trip}')
 async def get_date_trip_driver(now_date_trip: datetime):
     car_carrier = await DataGet.find_driver_of_date(now_date_trip)
@@ -298,6 +379,13 @@ async def get_distance_of_driver(id_driver: int):
             'distance_aw': dist_driver[4],
             'route_of_point_aw': dist_driver[5]
             }
+
+
+@router_driver.get('/balance/{id_people}')
+@cache(expire=30)
+async def get_balance(id_people: int):
+    balance = await UtilityFunction.get_count_gas(id_people)
+    return balance
 
 
 @router_passenger.post('/')
@@ -320,6 +408,15 @@ async def get_passenger():
     return {'passengers': passengers}
 
 
+@router_passenger.delete('/{id_passenger}')
+async def del_passenger(id_passenger: int):
+    passenger = await Delete.del_passenger(id_passenger)
+    if type(passenger) is str:
+        return passenger
+    else:
+        return {'message': f'{passenger.id_people} удалено'}
+
+
 @router_other_route.post('/')
 async def add_other_route(other_route: Annotated[OtherRouteAdd, Depends()]):
     other_route_data = await DataLoads.add_other_route(other_route)
@@ -340,6 +437,15 @@ async def get_other_route():
     return {'other_routes': other_routes}
 
 
+@router_other_route.delete('/{id_other_route}')
+async def del_other_route(id_other_route: int):
+    other_route = await Delete.del_other_route(id_other_route)
+    if type(other_route) is str:
+        return other_route
+    else:
+        return {'message': f'{other_route.id_organization} удалено'}
+
+
 @router_refueling.post('/')
 async def add_refueling(refueling: Annotated[RefuelingAdd, Depends()]):
     refueling_data = await DataLoads.add_refueling(refueling)
@@ -356,6 +462,15 @@ async def add_refueling_auto():
 async def get_refueling():
     refuelings = await DataGet.find_all_refuelings()
     return {'refuelings': refuelings}
+
+
+@router_refueling.delete('/{id_refueling}')
+async def del_refueling(id_refueling: int):
+    refueling = await Delete.del_refueling(id_refueling)
+    if type(refueling) is str:
+        return refueling
+    else:
+        return {'message': f'{refueling.date_refueling} - {refueling.quantity} удалено'}
 
 
 @router_refueling.get('/count/{date_start}/{date_finish}')

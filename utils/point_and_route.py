@@ -40,8 +40,8 @@ def descriptiom(address1, address2, la1, lon1, la2, lon2):
     return print(a), print(b)
 
 
-name_address_start = 'Завод'
-name_address_finish = 'Самара, Советской армии, 180/2'
+name_address_start = 'Управленческий, Крайняя, 22'
+name_address_finish = 'Волжский, улица Максима Горького, 76'
 
 print(get_name_address('53.306976, 50.291328'))
 

@@ -27,6 +27,9 @@ import requests
 from geopy.geocoders import Nominatim
 
 
+debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
+
+
 class UtilityFunction:
     SALT = SALT
 
@@ -216,7 +219,7 @@ class UtilityFunction:
         return id_point_away
 
     @staticmethod
-    async def find_distance_of_driver(id_driver):
+    async def find_distance_of_driver(id_driver: int):
         async with Session() as session:
             query_passenger = (
                 select(Passenger)
@@ -260,6 +263,29 @@ class UtilityFunction:
             length_route_forward = await UtilityFunction.get_route_length(point_forward)
             length_route_away = await UtilityFunction.get_route_length(point_away)
             return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
+
+    @classmethod
+    async def get_count_gas(cls, id_people: int):
+        async with Session() as session:
+            query = select(Refueling.quantity).filter(Refueling.id_people == id_people)
+            result = await session.execute(query)
+            models = result.scalars().all()
+            all_refueling = sum(models)
+            query = select(Car.average_consumption).filter(Car.id_people == id_people)
+            result = await session.execute(query)
+            average_consumption = result.unique().scalars().first()
+            query = select(Driver).filter(Driver.id_people == id_people)
+            result = await session.execute(query)
+            models = result.scalars().all()
+            all_distance = 0
+            for i in models:
+                all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
+                all_distance_for_one_trip = all_info[2] + all_info[4]
+                all_distance += all_distance_for_one_trip
+            spent_gas = all_distance * average_consumption / 100
+            all_refueling += debts.setdefault(id_people, 0)
+            spent_round = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas)
+            return spent_round - all_refueling
 
 
 class DataPatch:
@@ -476,6 +502,108 @@ class DataPatch:
 
 class Delete:
     @classmethod
+    async def del_point(cls, id_point):
+        async with Session() as session:
+            point = select(Point).filter(Point.id_point == id_point)
+            try:
+                result = await session.execute(point)
+                models = result.unique().scalars().one()
+                point = (
+                    delete(Point)
+                    .where(Point.id_point == id_point)
+                )
+                await session.execute(point)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_route(cls, id_route):
+        async with Session() as session:
+            route = select(Route).filter(Route.id_route == id_route)
+            try:
+                result = await session.execute(route)
+                models = result.unique().scalars().one()
+                route = (
+                    delete(Route)
+                    .where(Route.id_route == id_route)
+                )
+                await session.execute(route)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_fuel(cls, id_fuel):
+        async with Session() as session:
+            fuel = select(Fuel).filter(Fuel.id_fuel == id_fuel)
+            try:
+                result = await session.execute(fuel)
+                models = result.unique().scalars().one()
+                fuel = (
+                    delete(Fuel)
+                    .where(Fuel.id_fuel == id_fuel)
+                )
+                await session.execute(fuel)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_car(cls, id_car):
+        async with Session() as session:
+            car = select(Car).filter(Car.id_car == id_car)
+            try:
+                result = await session.execute(car)
+                models = result.unique().scalars().one()
+                car = (
+                    delete(Car)
+                    .where(Car.id_car == id_car)
+                )
+                await session.execute(car)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_car_fuel(cls, id_car_fuel):
+        async with Session() as session:
+            car_fuel = select(CarFuel).filter(CarFuel.id_car_fuel == id_car_fuel)
+            try:
+                result = await session.execute(car_fuel)
+                models = result.unique().scalars().one()
+                car_fuel = (
+                    delete(CarFuel)
+                    .where(CarFuel.id_car_fuel == id_car_fuel)
+                )
+                await session.execute(car_fuel)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_wd(cls, id_wd):
+        async with Session() as session:
+            wd = select(WhereDrive).filter(WhereDrive.id_wd == id_wd)
+            try:
+                result = await session.execute(wd)
+                models = result.unique().scalars().one()
+                wd = (
+                    delete(WhereDrive)
+                    .where(WhereDrive.id_wd == id_wd)
+                )
+                await session.execute(wd)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
     async def del_position(cls, id_position):
         async with Session() as session:
             position = select(Position).filter(Position.id_position == id_position)
@@ -487,6 +615,108 @@ class Delete:
                     .where(Position.id_position == id_position)
                 )
                 await session.execute(position)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_people(cls, id_people):
+        async with Session() as session:
+            people = select(People).filter(People.id_people == id_people)
+            try:
+                result = await session.execute(people)
+                models = result.unique().scalars().one()
+                people = (
+                    delete(People)
+                    .where(People.id_people == id_people)
+                )
+                await session.execute(people)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_organization(cls, id_organization):
+        async with Session() as session:
+            organization = select(Organization).filter(Organization.id_organization == id_organization)
+            try:
+                result = await session.execute(organization)
+                models = result.unique().scalars().one()
+                organization = (
+                    delete(Organization)
+                    .where(Organization.id_organization == id_organization)
+                )
+                await session.execute(organization)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_driver(cls, id_driver):
+        async with Session() as session:
+            driver = select(Driver).filter(Driver.id_driver == id_driver)
+            try:
+                result = await session.execute(driver)
+                models = result.unique().scalars().one()
+                driver = (
+                    delete(Driver)
+                    .where(Driver.id_driver == id_driver)
+                )
+                await session.execute(driver)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_passenger(cls, id_passenger):
+        async with Session() as session:
+            passenger = select(Passenger).filter(Passenger.id_passenger == id_passenger)
+            try:
+                result = await session.execute(passenger)
+                models = result.unique().scalars().one()
+                passenger = (
+                    delete(Passenger)
+                    .where(Passenger.id_passenger == id_passenger)
+                )
+                await session.execute(passenger)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_other_route(cls, id_other_route):
+        async with Session() as session:
+            other_route = select(OtherRoute).filter(OtherRoute.id_other_route == id_other_route)
+            try:
+                result = await session.execute(other_route)
+                models = result.unique().scalars().one()
+                other_route = (
+                    delete(OtherRoute)
+                    .where(OtherRoute.id_other_route == id_other_route)
+                )
+                await session.execute(other_route)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_refueling(cls, id_refueling):
+        async with Session() as session:
+            refueling = select(Refueling).filter(Refueling.id_refueling == id_refueling)
+            try:
+                result = await session.execute(refueling)
+                models = result.unique().scalars().one()
+                refueling = (
+                    delete(Refueling)
+                    .where(Refueling.id_refueling == id_refueling)
+                )
+                await session.execute(refueling)
                 await session.commit()
                 return models
             except NoResultFound:

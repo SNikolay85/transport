@@ -67,6 +67,10 @@ class FuelAdd(BaseModel):
     name_fuel: str
 
 
+class FuelUpdate(BaseModel):
+    name_fuel: Optional[str] = None
+
+
 class FullFuel(FuelAdd):
     id_fuel: int
 
@@ -79,6 +83,10 @@ class FullFuelRe(FullFuel):
 # schemes for model WhereDrive
 class WhereDriveAdd(BaseModel):
     name_wd: str
+
+
+class WhereDriveUpdate(BaseModel):
+    name_wd: Optional[str] = None
 
 
 class FullWhereDrive(WhereDriveAdd):
@@ -98,6 +106,11 @@ class CarFuelAdd(BaseModel):
     id_fuel: int
 
 
+class CarFuelUpdate(BaseModel):
+    id_car: Optional[int] = None
+    id_fuel: Optional[int] = None
+
+
 class FullCarFuel(CarFuelAdd):
     id_car_fuel: int
 
@@ -110,6 +123,16 @@ class PeopleAdd(BaseModel):
     patronymic: str
     id_point: int
     id_position: int
+    driving_licence: Optional[str] = None
+    ppr_card: Optional[str] = None
+
+
+class PeopleUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    patronymic: Optional[str] = None
+    id_point: Optional[int] = None
+    id_position: Optional[int] = None
     driving_licence: Optional[str] = None
     ppr_card: Optional[str] = None
 
@@ -183,6 +206,13 @@ class CarAdd(BaseModel):
     id_people: int
 
 
+class CarUpdate(BaseModel):
+    name_car: Optional[str] = None
+    number_of_car: Optional[str] = None
+    average_consumption: Optional[int] = None
+    id_people: Optional[int] = None
+
+
 class FullCar(CarAdd):
     id_car: int
 
@@ -197,6 +227,16 @@ class DriverAdd(BaseModel):
     id_people: int
     date_trip: date
     where_drive: int
+
+
+class DriverDate(BaseModel):
+    month_trip: Optional[int] = None
+
+
+class DriverUpdate(BaseModel):
+    id_people: Optional[int] = None
+    date_trip: Optional[date] = None
+    where_drive: Optional[int] = None
 
 
 class FullDriver(DriverAdd):
@@ -215,6 +255,13 @@ class PassengerAdd(BaseModel):
     id_people: int
     id_driver: int
     where_drive: int
+
+
+class PassengerUpdate(BaseModel):
+    order: Optional[int] = None
+    id_people: Optional[int] = None
+    id_driver: Optional[int] = None
+    where_drive: Optional[int] = None
 
 
 class FullPassenger(PassengerAdd):
@@ -241,6 +288,13 @@ class OtherRouteAdd(BaseModel):
     where_drive: int
 
 
+class OtherRouteUpdate(BaseModel):
+    order: Optional[int] = None
+    id_organization: Optional[int] = None
+    id_driver: Optional[int] = None
+    where_drive: Optional[int] = None
+
+
 class FullOtherRoute(OtherRouteAdd):
     id_other_route: int
 
@@ -260,6 +314,10 @@ class FullOtherRouteDriverRe(FullOtherRoute):
 # schemes for model Position
 class PositionAdd(BaseModel):
     name_position: str
+
+
+class PositionUpdate(BaseModel):
+    name_position: Optional[str] = None
 
 
 class FullPosition(PositionAdd):

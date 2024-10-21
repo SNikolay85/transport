@@ -17,6 +17,7 @@ from trips.router import router_other_route as other_route
 from trips.pages.router import router_page
 #SALT=djjfjj53jjd@djdjd
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     redis = aioredis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)

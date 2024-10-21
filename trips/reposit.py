@@ -1,8 +1,11 @@
-from datetime import datetime
+from datetime import datetime, date
 from hashlib import md5
+from functools import reduce
+import calendar
+
 
 from fastapi import HTTPException
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 
 from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, and_, update, delete
@@ -13,9 +16,10 @@ from trips.models import WhereDrive, People, Driver, Passenger, Refueling, Other
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
-from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate
+from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
+from trips.schema import CarUpdate, PositionUpdate, DriverUpdate, CarFuelUpdate, OtherRouteUpdate, PassengerUpdate
 
-from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
+from trips.schema import FullPoint, DriverDate, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
@@ -26,8 +30,34 @@ import requests
 from geopy.geocoders import Nominatim
 
 
+debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
+month = {
+    12: 'Декабрь', 1: 'Январь', 2: 'Февраль',
+    3: 'Март', 4: 'Апрель', 5: 'Май',
+    6: 'Июнь', 7: 'Июль', 8: 'Август',
+    9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь'
+}
+
+
 class UtilityFunction:
     SALT = SALT
+
+    @classmethod
+    def get_date_of_month(cls, months):
+        year = datetime.now().year
+        match months:
+            case 1: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 2: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 3: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 4: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 5: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 6: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 7: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 8: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 9: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 10: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 11: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 12: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
 
     @staticmethod
     def hash_password(self, password: str):
@@ -215,7 +245,7 @@ class UtilityFunction:
         return id_point_away
 
     @staticmethod
-    async def find_distance_of_driver(id_driver):
+    async def find_distance_of_driver(id_driver: int):
         async with Session() as session:
             query_passenger = (
                 select(Passenger)
@@ -261,17 +291,91 @@ class UtilityFunction:
             return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
 
     @classmethod
-    async def get_route_of_driver(cls, id_people):
-        list_route = []
+    async def get_quantity(cls, id_people, date_start, date_finish):
+        async with Session() as session:
+            query = (
+                select(Refueling)
+                .filter(and_(Refueling.id_people == id_people,
+                             Refueling.date_refueling >= date_start,
+                             Refueling.date_refueling <= date_finish))
+            )
+            result = await session.execute(query)
+            refueling = result.scalars().all()
+        if len(refueling) == 1:
+            all_refueling = refueling[0].quantity
+        elif len(refueling) == 0:
+            all_refueling = 0
+        else:
+            all_refueling = reduce(lambda a, b: a.quantity + b.quantity, refueling)
+        return all_refueling
+
+    @classmethod
+    async def get_driver(cls, id_people, date_start, date_finish):
+        list_trip = []
+        all_distance = 0
         dict_point = await DataGet.all_name_point()
         async with Session() as session:
-            query = select(Driver.id_driver).filter(Driver.id_people == id_people)
+            query = select(Driver).filter(and_(Driver.id_people == id_people),
+                                          Driver.date_trip >= date_start,
+                                          Driver.date_trip <= date_finish
+                                          )
             result = await session.execute(query)
             models = result.scalars().all()
-        for i in models:
-            info = await UtilityFunction.find_distance_of_driver(i)
-            list_route.append(map(x: info[3]))
-        return list_route
+
+            for i in models:
+                all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
+                all_distance_for_one_trip = all_info[2] + all_info[4]
+                trip = {
+                    'date_trip': i.date_trip,
+                    'trip_forward': ' - '.join(list(map(lambda x: dict_point[x], all_info[3]))),
+                    'distance_forward': all_info[2],
+                    'trip_away': ' - '.join(list(map(lambda x: dict_point[x], all_info[5]))),
+                    'distance_away': all_info[4]
+                }
+                list_trip.append(trip)
+                all_distance += all_distance_for_one_trip
+            return list_trip, all_distance
+
+    @classmethod
+    async def get_count_gas(cls, id_people: int, data: DriverDate):
+        year_now, month_now = datetime.now().year, datetime.now().month
+        all_period_start = date(year_now, 1, 1)
+        all_period_finish = date.today().replace(day=calendar.monthrange(year_now, month_now)[1])
+        if data.month_trip is None:
+            date_start = all_period_start
+            date_finish = all_period_finish
+        else:
+            get_date_of_month = UtilityFunction.get_date_of_month(data.month_trip)
+            date_start = get_date_of_month[0]
+            date_finish = get_date_of_month[1]
+        refueling_month = await UtilityFunction.get_quantity(id_people, date_start, date_finish)
+        driver = await UtilityFunction.get_driver(id_people, date_start, date_finish)
+        driver[0].append(refueling_month)
+        async with Session() as session:
+            query = select(Car.average_consumption).filter(Car.id_people == id_people)
+            result = await session.execute(query)
+            average_consumption = result.unique().scalars().first()
+        spent_gas_month = driver[1] * average_consumption / 100
+        refueling_all = await UtilityFunction.get_quantity(id_people, all_period_start, all_period_finish)
+        refueling_all += debts.setdefault(id_people, 0)
+        driver_all = await UtilityFunction.get_driver(id_people, all_period_start, all_period_finish)
+        driver_all[0].append(refueling_all)
+        spent_gas_all = driver_all[1] * average_consumption / 100
+        spent_round_month = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_month)
+        spent_round_all = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_all)
+        dd = spent_round_all - refueling_all
+        ff = spent_round_month - refueling_month
+        ddg = dd - ff
+            #date_trip = 0
+            #df = datetime.today()
+            # now = datetime.strptime(str(date.today()), '%Y-%m-%d').date()
+            # if data.date_trip is None:
+            #     trips = list(filter(lambda x: x['date_trip'] <= date.today(), list_trip))
+            # else:
+            #     trips = list(filter(lambda x: x['date_trip'] >= data.date_trip, list_trip))
+                # trips = list(filter(lambda x: x['date_trip'] >= date.fromisoformat('2024-10-01'), ff))
+        return dd, ff, ddg, driver[0], driver_all[0]#spent_round - ost, list_trip
+
 
 class DataPatch:
     @classmethod
@@ -336,6 +440,376 @@ class DataPatch:
                 return (f'Изменения для id {update_route[0]}: ',
                         f'У маршрута: {name_route[0].name_point} -  {name_route[1].name_point} изменилось растояние',
                         f'Новое значение: {update_route[3]} км')
+
+    @classmethod
+    async def update_fuel(cls, id_fuel: int, data: FuelUpdate):
+        async with Session() as session:
+            query = (
+                update(Fuel)
+                .where(Fuel.id_fuel == id_fuel)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Fuel.id_fuel, Fuel.name_fuel)
+            )
+            result = await session.execute(query)
+            update_fuel = result.fetchone()
+            await session.commit()
+            if update_fuel is not None:
+                return (f'Изменения для id {update_fuel[0]}: ',
+                        f'Новое значение: {update_fuel[1]}')
+
+    @classmethod
+    async def update_people(cls, id_people: int, data: PeopleUpdate):
+        async with Session() as session:
+            query = (
+                update(People)
+                .where(People.id_people == id_people)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(People.id_people, People.first_name, People.last_name, People.patronymic,
+                           People.id_point, People.id_position, People.driving_licence, People.ppr_card)
+            )
+            result = await session.execute(query)
+            update_people = result.fetchone()
+            await session.commit()
+            if update_people is not None:
+                return (f'Изменения для id {update_people[0]}: ',
+                        f'Новое значение: {update_people}')
+
+    @classmethod
+    async def update_wd(cls, id_wd: int, data: WhereDriveUpdate):
+        async with Session() as session:
+            query = (
+                update(WhereDrive)
+                .where(WhereDrive.id_wd == id_wd)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(WhereDrive.id_wd, WhereDrive.name_wd)
+            )
+            result = await session.execute(query)
+            update_wd = result.fetchone()
+            await session.commit()
+            if update_wd is not None:
+                return (f'Изменения для id {update_wd[0]}: ',
+                        f'Новое значение: {update_wd[1]}')
+
+    @classmethod
+    async def update_position(cls, id_position: int, data: PositionUpdate):
+        async with Session() as session:
+            query = (
+                update(Position)
+                .where(Position.id_position == id_position)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Position.id_position, Position.name_position)
+            )
+            result = await session.execute(query)
+            update_position = result.fetchone()
+            await session.commit()
+            if update_position is not None:
+                return (f'Изменения для id {update_position[0]}: ',
+                        f'Новое значение: {update_position[1]}')
+
+    @classmethod
+    async def update_driver(cls, id_driver: int, data: DriverUpdate):
+        async with Session() as session:
+            query = (
+                update(Driver)
+                .where(Driver.id_driver == id_driver)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Driver.id_driver, Driver.id_people, Driver.date_trip, Driver.where_drive)
+            )
+            result = await session.execute(query)
+            update_driver = result.fetchone()
+            await session.commit()
+            if update_driver is not None:
+                return (f'Изменения для id {update_driver[0]}: ',
+                        f'Новое значение: {update_driver}')
+
+    @classmethod
+    async def update_car(cls, id_car: int, data: CarUpdate):
+        async with Session() as session:
+            query = (
+                update(Car)
+                .where(Car.id_car == id_car)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Car.id_car, Car.name_car, Car.number_of_car, Car.average_consumption, Car.id_people)
+            )
+            result = await session.execute(query)
+            update_car = result.fetchone()
+            await session.commit()
+            if update_car is not None:
+                return (f'Изменения для id {update_car[0]}: ',
+                        f'Новое значение: {update_car}')
+
+    @classmethod
+    async def update_passenger(cls, id_passenger: int, data: PassengerUpdate):
+        async with Session() as session:
+            query = (
+                update(Passenger)
+                .where(Passenger.id_passenger == id_passenger)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Passenger.id_passenger, Passenger.order, Passenger.id_people,
+                           Passenger.id_driver, Passenger.where_drive)
+            )
+            result = await session.execute(query)
+            update_passenger = result.fetchone()
+            await session.commit()
+            if update_passenger is not None:
+                return (f'Изменения для id {update_passenger[0]}: ',
+                        f'Новое значение: {update_passenger}')
+
+    @classmethod
+    async def update_other_route(cls, id_other_route: int, data: OtherRouteUpdate):
+        async with Session() as session:
+            query = (
+                update(OtherRoute)
+                .where(OtherRoute.id_other_route == id_other_route)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(OtherRoute.id_other_route, OtherRoute.order, OtherRoute.id_organization,
+                           OtherRoute.id_driver, OtherRoute.where_drive)
+            )
+            result = await session.execute(query)
+            update_other_route = result.fetchone()
+            await session.commit()
+            if update_other_route is not None:
+                return (f'Изменения для id {update_other_route[0]}: ',
+                        f'Новое значение: {update_other_route}')
+
+    @classmethod
+    async def update_car_fuel(cls, id_car_fuel: int, data: CarFuelUpdate):
+        async with Session() as session:
+            query = (
+                update(CarFuel)
+                .where(CarFuel.id_car_fuel == id_car_fuel)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(CarFuel.id_car_fuel, CarFuel.id_car, CarFuel.id_fuel)
+            )
+            result = await session.execute(query)
+            update_car_fuel = result.fetchone()
+            await session.commit()
+            if update_car_fuel is not None:
+                return (f'Изменения для id {update_car_fuel[0]}: ',
+                        f'Новое значение: {update_car_fuel}')
+
+
+class Delete:
+    @classmethod
+    async def del_point(cls, id_point):
+        async with Session() as session:
+            point = select(Point).filter(Point.id_point == id_point)
+            try:
+                result = await session.execute(point)
+                models = result.unique().scalars().one()
+                point = (
+                    delete(Point)
+                    .where(Point.id_point == id_point)
+                )
+                await session.execute(point)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_route(cls, id_route):
+        async with Session() as session:
+            route = select(Route).filter(Route.id_route == id_route)
+            try:
+                result = await session.execute(route)
+                models = result.unique().scalars().one()
+                route = (
+                    delete(Route)
+                    .where(Route.id_route == id_route)
+                )
+                await session.execute(route)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_fuel(cls, id_fuel):
+        async with Session() as session:
+            fuel = select(Fuel).filter(Fuel.id_fuel == id_fuel)
+            try:
+                result = await session.execute(fuel)
+                models = result.unique().scalars().one()
+                fuel = (
+                    delete(Fuel)
+                    .where(Fuel.id_fuel == id_fuel)
+                )
+                await session.execute(fuel)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_car(cls, id_car):
+        async with Session() as session:
+            car = select(Car).filter(Car.id_car == id_car)
+            try:
+                result = await session.execute(car)
+                models = result.unique().scalars().one()
+                car = (
+                    delete(Car)
+                    .where(Car.id_car == id_car)
+                )
+                await session.execute(car)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_car_fuel(cls, id_car_fuel):
+        async with Session() as session:
+            car_fuel = select(CarFuel).filter(CarFuel.id_car_fuel == id_car_fuel)
+            try:
+                result = await session.execute(car_fuel)
+                models = result.unique().scalars().one()
+                car_fuel = (
+                    delete(CarFuel)
+                    .where(CarFuel.id_car_fuel == id_car_fuel)
+                )
+                await session.execute(car_fuel)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_wd(cls, id_wd):
+        async with Session() as session:
+            wd = select(WhereDrive).filter(WhereDrive.id_wd == id_wd)
+            try:
+                result = await session.execute(wd)
+                models = result.unique().scalars().one()
+                wd = (
+                    delete(WhereDrive)
+                    .where(WhereDrive.id_wd == id_wd)
+                )
+                await session.execute(wd)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_position(cls, id_position):
+        async with Session() as session:
+            position = select(Position).filter(Position.id_position == id_position)
+            try:
+                result = await session.execute(position)
+                models = result.unique().scalars().one()
+                position = (
+                    delete(Position)
+                    .where(Position.id_position == id_position)
+                )
+                await session.execute(position)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_people(cls, id_people):
+        async with Session() as session:
+            people = select(People).filter(People.id_people == id_people)
+            try:
+                result = await session.execute(people)
+                models = result.unique().scalars().one()
+                people = (
+                    delete(People)
+                    .where(People.id_people == id_people)
+                )
+                await session.execute(people)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_organization(cls, id_organization):
+        async with Session() as session:
+            organization = select(Organization).filter(Organization.id_organization == id_organization)
+            try:
+                result = await session.execute(organization)
+                models = result.unique().scalars().one()
+                organization = (
+                    delete(Organization)
+                    .where(Organization.id_organization == id_organization)
+                )
+                await session.execute(organization)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_driver(cls, id_driver):
+        async with Session() as session:
+            driver = select(Driver).filter(Driver.id_driver == id_driver)
+            try:
+                result = await session.execute(driver)
+                models = result.unique().scalars().one()
+                driver = (
+                    delete(Driver)
+                    .where(Driver.id_driver == id_driver)
+                )
+                await session.execute(driver)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_passenger(cls, id_passenger):
+        async with Session() as session:
+            passenger = select(Passenger).filter(Passenger.id_passenger == id_passenger)
+            try:
+                result = await session.execute(passenger)
+                models = result.unique().scalars().one()
+                passenger = (
+                    delete(Passenger)
+                    .where(Passenger.id_passenger == id_passenger)
+                )
+                await session.execute(passenger)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_other_route(cls, id_other_route):
+        async with Session() as session:
+            other_route = select(OtherRoute).filter(OtherRoute.id_other_route == id_other_route)
+            try:
+                result = await session.execute(other_route)
+                models = result.unique().scalars().one()
+                other_route = (
+                    delete(OtherRoute)
+                    .where(OtherRoute.id_other_route == id_other_route)
+                )
+                await session.execute(other_route)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_refueling(cls, id_refueling):
+        async with Session() as session:
+            refueling = select(Refueling).filter(Refueling.id_refueling == id_refueling)
+            try:
+                result = await session.execute(refueling)
+                models = result.unique().scalars().one()
+                refueling = (
+                    delete(Refueling)
+                    .where(Refueling.id_refueling == id_refueling)
+                )
+                await session.execute(refueling)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
 
 
 class DataLoads:

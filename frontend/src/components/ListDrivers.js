@@ -1,32 +1,25 @@
 import React from 'react'
 import axios from 'axios'
-import baseurl from './RoutesLinks'
+import baseurl from './AppRoute'
 
 //import { useTable } from 'react-table'
-import { format } from 'date-fns'
-
-
 
 class ListDrivers extends React.Component {
     constructor(props)
             {
               super(props)
 
-              let dateString = format(this.props.my_date, 'yyyy-MM-dd')
-              const da = '2024-02-02'
-
-              axios.get(baseurl+'/driver/'+dateString+'/').then((res) => {
-                  this.setState({driver_date: res.data.car_carrier })
-              })
+               axios.get(baseurl + '/driver/2024-02-01/').then((res) => {
+                      this.setState({driver_date: res.data.car_carrier })
+               })
 
 
                this.state = {
+                             date_now: new Date(),
                              driver_date: [],
-                             date: dateString
                              }
             }
     render() {
-    console.log(baseurl+'/driver/'+this.state.date+'/')
            if (this.state.driver_date.length > 0)
             return (
                 <div>

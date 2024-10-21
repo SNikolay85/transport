@@ -1,5 +1,8 @@
-from datetime import datetime
+from datetime import datetime, date
 from hashlib import md5
+from functools import reduce
+import calendar
+
 
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
@@ -16,7 +19,7 @@ from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, 
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
 from trips.schema import CarUpdate, PositionUpdate, DriverUpdate, CarFuelUpdate, OtherRouteUpdate, PassengerUpdate
 
-from trips.schema import FullPoint, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
+from trips.schema import FullPoint, DriverDate, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
@@ -28,10 +31,33 @@ from geopy.geocoders import Nominatim
 
 
 debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
+month = {
+    12: 'Декабрь', 1: 'Январь', 2: 'Февраль',
+    3: 'Март', 4: 'Апрель', 5: 'Май',
+    6: 'Июнь', 7: 'Июль', 8: 'Август',
+    9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь'
+}
 
 
 class UtilityFunction:
     SALT = SALT
+
+    @classmethod
+    def get_date_of_month(cls, months):
+        year = datetime.now().year
+        match months:
+            case 1: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 2: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 3: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 4: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 5: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 6: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 7: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 8: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 9: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 10: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 11: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
+            case 12: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
 
     @staticmethod
     def hash_password(self, password: str):
@@ -265,29 +291,90 @@ class UtilityFunction:
             return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
 
     @classmethod
-    async def get_count_gas(cls, id_people: int):
+    async def get_quantity(cls, id_people, date_start, date_finish):
         async with Session() as session:
-            query = select(Refueling.quantity).filter(Refueling.id_people == id_people)
+            query = (
+                select(Refueling)
+                .filter(and_(Refueling.id_people == id_people,
+                             Refueling.date_refueling >= date_start,
+                             Refueling.date_refueling <= date_finish))
+            )
+            result = await session.execute(query)
+            refueling = result.scalars().all()
+        if len(refueling) == 1:
+            all_refueling = refueling[0].quantity
+        elif len(refueling) == 0:
+            all_refueling = 0
+        else:
+            all_refueling = reduce(lambda a, b: a.quantity + b.quantity, refueling)
+        return all_refueling
+
+    @classmethod
+    async def get_driver(cls, id_people, date_start, date_finish):
+        list_trip = []
+        all_distance = 0
+        dict_point = await DataGet.all_name_point()
+        async with Session() as session:
+            query = select(Driver).filter(and_(Driver.id_people == id_people),
+                                          Driver.date_trip >= date_start,
+                                          Driver.date_trip <= date_finish
+                                          )
             result = await session.execute(query)
             models = result.scalars().all()
-            all_refueling = sum(models)
-            query = select(Car.average_consumption).filter(Car.id_people == id_people)
-            result = await session.execute(query)
-            average_consumption = result.unique().scalars().first()
-            query = select(Driver).filter(Driver.id_people == id_people)
-            result = await session.execute(query)
-            models = result.scalars().all()
-            ff = []
-            all_distance = 0
+
             for i in models:
                 all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
                 all_distance_for_one_trip = all_info[2] + all_info[4]
-                ff.append(all_distance_for_one_trip)
+                trip = {
+                    'date_trip': i.date_trip,
+                    'trip_forward': ' - '.join(list(map(lambda x: dict_point[x], all_info[3]))),
+                    'distance_forward': all_info[2],
+                    'trip_away': ' - '.join(list(map(lambda x: dict_point[x], all_info[5]))),
+                    'distance_away': all_info[4]
+                }
+                list_trip.append(trip)
                 all_distance += all_distance_for_one_trip
-            spent_gas = all_distance * average_consumption / 100
-            all_refueling += debts.setdefault(id_people, 0)
-            spent_round = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas)
-            return spent_round - all_refueling, ff
+            return list_trip, all_distance
+
+    @classmethod
+    async def get_count_gas(cls, id_people: int, data: DriverDate):
+        year_now, month_now = datetime.now().year, datetime.now().month
+        all_period_start = date(year_now, 1, 1)
+        all_period_finish = date.today().replace(day=calendar.monthrange(year_now, month_now)[1])
+        if data.month_trip is None:
+            date_start = all_period_start
+            date_finish = all_period_finish
+        else:
+            get_date_of_month = UtilityFunction.get_date_of_month(data.month_trip)
+            date_start = get_date_of_month[0]
+            date_finish = get_date_of_month[1]
+        refueling_month = await UtilityFunction.get_quantity(id_people, date_start, date_finish)
+        driver = await UtilityFunction.get_driver(id_people, date_start, date_finish)
+        driver[0].append(refueling_month)
+        async with Session() as session:
+            query = select(Car.average_consumption).filter(Car.id_people == id_people)
+            result = await session.execute(query)
+            average_consumption = result.unique().scalars().first()
+        spent_gas_month = driver[1] * average_consumption / 100
+        refueling_all = await UtilityFunction.get_quantity(id_people, all_period_start, all_period_finish)
+        refueling_all += debts.setdefault(id_people, 0)
+        driver_all = await UtilityFunction.get_driver(id_people, all_period_start, all_period_finish)
+        driver_all[0].append(refueling_all)
+        spent_gas_all = driver_all[1] * average_consumption / 100
+        spent_round_month = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_month)
+        spent_round_all = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_all)
+        dd = spent_round_all - refueling_all
+        ff = spent_round_month - refueling_month
+        ddg = dd - ff
+            #date_trip = 0
+            #df = datetime.today()
+            # now = datetime.strptime(str(date.today()), '%Y-%m-%d').date()
+            # if data.date_trip is None:
+            #     trips = list(filter(lambda x: x['date_trip'] <= date.today(), list_trip))
+            # else:
+            #     trips = list(filter(lambda x: x['date_trip'] >= data.date_trip, list_trip))
+                # trips = list(filter(lambda x: x['date_trip'] >= date.fromisoformat('2024-10-01'), ff))
+        return dd, ff, ddg, driver[0], driver_all[0]#spent_round - ost, list_trip
 
 
 class DataPatch:

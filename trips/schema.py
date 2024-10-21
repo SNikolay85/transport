@@ -229,6 +229,10 @@ class DriverAdd(BaseModel):
     where_drive: int
 
 
+class DriverDate(BaseModel):
+    month_trip: Optional[int] = None
+
+
 class DriverUpdate(BaseModel):
     id_people: Optional[int] = None
     date_trip: Optional[date] = None

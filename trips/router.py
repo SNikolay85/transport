@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, Body, HTTPException
@@ -8,7 +8,7 @@ from fastapi_cache.decorator import cache
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
 from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, WhereDriveUpdate, PeopleUpdate
-from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate
+from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate, DriverDate
 
 from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch, Delete
 
@@ -381,10 +381,10 @@ async def get_distance_of_driver(id_driver: int):
             }
 
 
-@router_driver.get('/balance/{id_people}')
+@router_driver.get('/balance/{id_people}/{month_trips}')
 @cache(expire=30)
-async def get_balance(id_people: int):
-    balance = await UtilityFunction.get_count_gas(id_people)
+async def get_balance(id_people: int, month_trip: Annotated[DriverDate, Depends()]):
+    balance = await UtilityFunction.get_count_gas(id_people, month_trip)
     return balance
 
 

@@ -234,6 +234,12 @@ async def get_distance_of_driver(id_driver: int):
             }
 
 
+@router_driver.get('/build_route/{id_people}')
+async def get_list_route(id_people: int):
+    driver = await UtilityFunction.get_route_of_driver(id_people)
+    return driver
+
+
 @router_passenger.post('/')
 async def add_passenger(passenger: Annotated[PassengerAdd, Depends()]):
     passenger_data = await DataLoads.add_passenger(passenger)

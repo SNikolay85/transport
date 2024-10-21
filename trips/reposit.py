@@ -260,6 +260,18 @@ class UtilityFunction:
             length_route_away = await UtilityFunction.get_route_length(point_away)
             return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
 
+    @classmethod
+    async def get_route_of_driver(cls, id_people):
+        list_route = []
+        dict_point = await DataGet.all_name_point()
+        async with Session() as session:
+            query = select(Driver.id_driver).filter(Driver.id_people == id_people)
+            result = await session.execute(query)
+            models = result.scalars().all()
+        for i in models:
+            info = await UtilityFunction.find_distance_of_driver(i)
+            list_route.append(map(x: info[3]))
+        return list_route
 
 class DataPatch:
     @classmethod

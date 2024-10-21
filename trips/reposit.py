@@ -277,15 +277,17 @@ class UtilityFunction:
             query = select(Driver).filter(Driver.id_people == id_people)
             result = await session.execute(query)
             models = result.scalars().all()
+            ff = []
             all_distance = 0
             for i in models:
                 all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
                 all_distance_for_one_trip = all_info[2] + all_info[4]
+                ff.append(all_distance_for_one_trip)
                 all_distance += all_distance_for_one_trip
             spent_gas = all_distance * average_consumption / 100
             all_refueling += debts.setdefault(id_people, 0)
             spent_round = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas)
-            return spent_round - all_refueling
+            return spent_round - all_refueling, ff
 
 
 class DataPatch:

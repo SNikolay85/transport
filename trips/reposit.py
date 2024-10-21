@@ -291,37 +291,28 @@ class UtilityFunction:
             return dto_pas, dto_or, length_route_forward, point_forward, length_route_away, point_away
 
     @classmethod
-    async def get_quantity(cls, id_people, date_start, date_finish):
+    async def get_quantity(cls, id_people):
         async with Session() as session:
-            query = (
-                select(Refueling)
-                .filter(and_(Refueling.id_people == id_people,
-                             Refueling.date_refueling >= date_start,
-                             Refueling.date_refueling <= date_finish))
-            )
+            query = select(Refueling).filter(Refueling.id_people == id_people)
             result = await session.execute(query)
             refueling = result.scalars().all()
-        if len(refueling) == 1:
-            all_refueling = refueling[0].quantity
-        elif len(refueling) == 0:
-            all_refueling = 0
-        else:
-            all_refueling = reduce(lambda a, b: a.quantity + b.quantity, refueling)
-        return all_refueling
+        # if len(refueling) == 1:
+        #     all_refueling = refueling[0].quantity
+        # elif len(refueling) == 0:
+        #     all_refueling = 0
+        # else:
+        #     all_refueling = reduce(lambda a, b: a.quantity + b.quantity, refueling)
+        return refueling
 
     @classmethod
-    async def get_driver(cls, id_people, date_start, date_finish):
+    async def get_driver(cls, id_people):
         list_trip = []
         all_distance = 0
         dict_point = await DataGet.all_name_point()
         async with Session() as session:
-            query = select(Driver).filter(and_(Driver.id_people == id_people),
-                                          Driver.date_trip >= date_start,
-                                          Driver.date_trip <= date_finish
-                                          )
+            query = select(Driver).filter(Driver.id_people == id_people)
             result = await session.execute(query)
             models = result.scalars().all()
-
             for i in models:
                 all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
                 all_distance_for_one_trip = all_info[2] + all_info[4]
@@ -330,7 +321,8 @@ class UtilityFunction:
                     'trip_forward': ' - '.join(list(map(lambda x: dict_point[x], all_info[3]))),
                     'distance_forward': all_info[2],
                     'trip_away': ' - '.join(list(map(lambda x: dict_point[x], all_info[5]))),
-                    'distance_away': all_info[4]
+                    'distance_away': all_info[4],
+                    'cost': 100
                 }
                 list_trip.append(trip)
                 all_distance += all_distance_for_one_trip
@@ -348,24 +340,30 @@ class UtilityFunction:
             get_date_of_month = UtilityFunction.get_date_of_month(data.month_trip)
             date_start = get_date_of_month[0]
             date_finish = get_date_of_month[1]
-        refueling_month = await UtilityFunction.get_quantity(id_people, date_start, date_finish)
-        driver = await UtilityFunction.get_driver(id_people, date_start, date_finish)
-        driver[0].append(refueling_month)
+        refueling = await UtilityFunction.get_quantity(id_people)
+        driver = await UtilityFunction.get_driver(id_people)
+
+        list_trip_mounth = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver[0]))
+        list_refueling_mount = list(filter(lambda x: date_finish >= datetime(x.date_refueling) >= date_start, refueling))
+        # trips = list(filter(lambda x: x['date_trip'] >= date.fromisoformat('2024-10-01'), ff))
+        # refueling_month = await UtilityFunction.get_quantity(id_people, date_start, date_finish)
+        # driver = await UtilityFunction.get_driver(id_people, date_start, date_finish)
+        # driver[0].append(refueling_month)
         async with Session() as session:
             query = select(Car.average_consumption).filter(Car.id_people == id_people)
             result = await session.execute(query)
             average_consumption = result.unique().scalars().first()
-        spent_gas_month = driver[1] * average_consumption / 100
-        refueling_all = await UtilityFunction.get_quantity(id_people, all_period_start, all_period_finish)
-        refueling_all += debts.setdefault(id_people, 0)
-        driver_all = await UtilityFunction.get_driver(id_people, all_period_start, all_period_finish)
-        driver_all[0].append(refueling_all)
-        spent_gas_all = driver_all[1] * average_consumption / 100
-        spent_round_month = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_month)
-        spent_round_all = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_all)
-        dd = spent_round_all - refueling_all
-        ff = spent_round_month - refueling_month
-        ddg = dd - ff
+        # spent_gas_month = driver[1] * average_consumption / 100
+        # refueling_all = await UtilityFunction.get_quantity(id_people, all_period_start, all_period_finish)
+        # refueling_all += debts.setdefault(id_people, 0)
+        # driver_all = await UtilityFunction.get_driver(id_people, all_period_start, all_period_finish)
+        # driver_all[0].append(refueling_all)
+        # spent_gas_all = driver_all[1] * average_consumption / 100
+        # spent_round_month = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_month)
+        # spent_round_all = (lambda x: int(x + 0.5) if x > 0 else int(x + -0.5))(spent_gas_all)
+        # dd = spent_round_all - refueling_all
+        # ff = spent_round_month - refueling_month
+        # ddg = dd - ff
             #date_trip = 0
             #df = datetime.today()
             # now = datetime.strptime(str(date.today()), '%Y-%m-%d').date()
@@ -374,7 +372,7 @@ class UtilityFunction:
             # else:
             #     trips = list(filter(lambda x: x['date_trip'] >= data.date_trip, list_trip))
                 # trips = list(filter(lambda x: x['date_trip'] >= date.fromisoformat('2024-10-01'), ff))
-        return dd, ff, ddg, driver[0], driver_all[0]#spent_round - ost, list_trip
+        return list_trip_mounth, list_refueling_mount, refueling#dd, ff, ddg, driver[0], driver_all[0]#spent_round - ost, list_trip
 
 
 class DataPatch:

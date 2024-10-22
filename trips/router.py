@@ -64,10 +64,10 @@ async def get_point():
     return points
 
 
-@router_point.get('/{name_point}')
-async def get_point(name_point:str):
-    points = await DataGet.find_name_point(name_point)
-    return points
+# @router_point.get('/{name_point}')
+# async def get_point(name_point:str):
+#     points = await DataGet.find_name_point(name_point)
+#     return points
 
 
 @router_point.get('/')

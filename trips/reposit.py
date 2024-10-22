@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from hashlib import md5
 from functools import reduce
+from itertools import chain
 import calendar
 
 
@@ -300,12 +301,24 @@ class UtilityFunction:
         return refueling
 
     @classmethod
+    async def get_length(cls, a: int, b: int, all_route):
+        one_way = list(filter(lambda x: x.id_start_point == a and x.id_finish_point == b, all_route))
+        other_way = list(filter(lambda x: x.id_start_point == b and x.id_finish_point == a, all_route))
+
+        if len(one_way) == 0 and len(other_way) == 0:
+            raise HTTPException(status_code=422, detail='Маршрут не найден')
+        else:
+            if len(one_way) == 0:
+                length = other_way[0].distance
+            else:
+                length = one_way[0].distance
+        return length
+
+    @classmethod
     async def get_driver(cls, id_people):
         list_trip = []
-        list_id_driver = []
-        point = await DataGet.all_point()
-        dict_point = {int(i.id_point): {'name_point': i.name_point, 'cost': i.cost} for i in point}
-        #dict_point = await DataGet.all_name_point()
+        point = await DataGet.find_all_point()
+        dict_point = {int(i.id_point): {'name_point': i.name_point, 'cost': i.cost, 'people': i.peoples} for i in point}
         async with Session() as session:
             query = select(Driver).filter(Driver.id_people == id_people)
             result = await session.execute(query)
@@ -318,10 +331,12 @@ class UtilityFunction:
                     'distance_forward': all_info[2],
                     'trip_away': ' - '.join(list(map(lambda x: dict_point[x]['name_point'], all_info[5]))),
                     'distance_away': all_info[4],
-                    'list_driver': list(map(lambda x: x.people.id_point, all_info[0]))
+                    'passenger': all_info[0],
+                    'other_route': all_info[1]
                 }
                 list_trip.append(trip)
-            return list_trip
+            answer = {'all_point': dict_point, 'trip': list_trip}
+        return answer
 
     @classmethod
     async def get_count_gas(cls, id_people: int, data: DriverDate):
@@ -338,65 +353,35 @@ class UtilityFunction:
         refueling = await UtilityFunction.get_quantity(id_people)
         driver = await UtilityFunction.get_driver(id_people)
 
-
-
-        list_trip_month = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver))
+        list_trip_month = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver['trip']))
         list_refueling_mount = list(filter(lambda x: date_finish >= x.date_refueling.date() >= date_start, refueling))
 
         refueling_month = sum([i.quantity for i in list_refueling_mount])
         all_refueling = sum([i.quantity for i in refueling])
 
         distance_month = sum([i['distance_forward'] + i['distance_away'] for i in list_trip_month])
-        all_distance = sum([i['distance_forward'] + i['distance_away'] for i in driver])
+        all_distance = sum([i['distance_forward'] + i['distance_away'] for i in driver['trip']])
 
         async with Session() as session:
             query = select(Car.average_consumption).filter(Car.id_people == id_people)
             result = await session.execute(query)
             average_consumption = result.unique().scalars().first()
-            query = select(People).filter(People.id_people == id_people)
-            result = await session.execute(query)
-            worker = result.unique().scalars().first()
-
-            query = select(Driver.id_driver).filter(Driver.id_people == id_people)
-            result = await session.execute(query)
-            id_driver = result.unique().scalars().all()
-
-            query = select(Passenger)
-            result = await session.execute(query)
-            models = result.scalars().all()
-
-            lst = []
-            for i in id_driver:
-                list_id_passenger = list(filter(lambda x: x.id_driver == i, models))
-                lst.extend(list_id_passenger)
-
-            gg = []
-            ff = [i['list_driver'] for i in driver]
-            for i in ff:
-                gg.extend(i)
-
-            costing = []
-
-            a = worker.id_point
 
             query = await session.execute(select(Route))
-            res_route = query.unique().scalars().all()
+            all_route = query.unique().scalars().all()
 
+        list_driver = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver['trip']))
+        list_passenger = list(chain(*(map(lambda x: x['passenger'], list_driver))))
+        list_point_passenger = list(map(lambda x: x.people.id_point, list_passenger))
 
-            for i in gg:
-                one_way = list(filter(lambda x: x.id_start_point == a and x.id_finish_point == i, res_route))
-                other_way = list(filter(lambda x: x.id_start_point == i and x.id_finish_point == a, res_route))
+        list_other_route = list(chain(*(map(lambda x: x['other_route'], list_driver))))
+        list_point_other_route = list(map(lambda x: x.organization.id_point, list_other_route))
 
-                if len(one_way) == 0:
-                    length = other_way[0].distance
-                else:
-                    length = one_way[0].distance
-
-                if length > 0:
-                    costing.append(100)
-                else:
-                    costing.append(50)
-
+        point_of_driver = [key for key, val in driver['all_point'].items() if
+                           len(val['people']) != 0 and val['people'][0].id_people == id_people]
+        point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
+        cost_passenger = [driver['all_point'][i]['cost'] if await UtilityFunction.get_length(point_of_driver[0], i, all_route) > 0 else 50 for i in list_point_passenger]
+        cost_other = [driver['all_point'][i]['cost'] if await UtilityFunction.get_length(point_of_factory[0], i, all_route) > 0 else 50 for i in list_point_other_route]
 
         spent_gas_month = distance_month * average_consumption / 100
         spent_gas_all = all_distance * average_consumption / 100
@@ -409,14 +394,14 @@ class UtilityFunction:
         balance_all = spent_round_all - all_refueling
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
-        point = await DataGet.all_point()
 
-        return sum(costing), gg,  #point, (f'Данные за {month[data.month_trip]}',
-        #         f'Сотрудник {worker.first_name} {worker.last_name}: ',
-        #         f'Остаток текущий {balance_all} ',
-        #         f'Остаток на начало месяца {result} ',
-        #         f'Заправки {refueling_month}', list_refueling_mount,
-        #         f'Поездки'), list_trip_month
+        return (f'Данные за {month[data.month_trip]}',
+                f'Заезды {sum(cost_passenger) + sum(cost_other)}',
+                #f'Сотрудник {worker.first_name} {worker.last_name}: ',
+                f'Остаток текущий {balance_all} ',
+                f'Остаток на начало месяца {result} ',
+                f'Заправки {refueling_month}', list_refueling_mount,
+                f'Поездки'), list_trip_month
 
 
 class DataPatch:
@@ -1161,14 +1146,14 @@ class DataGet:
             dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
             return dto
 
-    @staticmethod
-    async def find_name_point(name_point: str):
-        async with Session() as session:
-            query = select(Point).options(selectinload(Point.peoples)).filter(Point.name_point == name_point)
-            result = await session.execute(query)
-            models = result.unique().scalars().all()
-            dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
-            return dto
+    # @staticmethod
+    # async def find_name_point(name_point: str):
+    #     async with Session() as session:
+    #         query = select(Point).options(selectinload(Point.peoples)).filter(Point.name_point == name_point)
+    #         result = await session.execute(query)
+    #         models = result.unique().scalars().all()
+    #         dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
+    #         return dto
 
     @staticmethod
     async def find_all_route():

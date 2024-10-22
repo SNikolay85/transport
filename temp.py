@@ -50,6 +50,8 @@ print(f'{pp[:10]} {pp[11:19]}')
 date_now = datetime.strptime(f'{pp[:10]} {pp[11:23]}', '%Y-%m-%d %H:%M:%S.%f')
 print(date_now, type(date_now))
 
+df = [[4, 6], [5, 8]]
+print(sum(df))
 
 #pprint([{'date': i['date'], 'quantity': i['amount']} for i in ppr(date_start, date_now)])
 # print(datetime.strptime('2024-09-01', '%Y-%m-%d %H:%M').date())

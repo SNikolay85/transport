@@ -32,6 +32,7 @@ from geopy.geocoders import Nominatim
 
 debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
 month = {
+    None: 'Все месяца',
     12: 'Декабрь', 1: 'Январь', 2: 'Февраль',
     3: 'Март', 4: 'Апрель', 5: 'Май',
     6: 'Июнь', 7: 'Июль', 8: 'Август',
@@ -301,7 +302,10 @@ class UtilityFunction:
     @classmethod
     async def get_driver(cls, id_people):
         list_trip = []
-        dict_point = await DataGet.all_name_point()
+        list_id_driver = []
+        point = await DataGet.all_point()
+        dict_point = {int(i.id_point): {'name_point': i.name_point, 'cost': i.cost} for i in point}
+        #dict_point = await DataGet.all_name_point()
         async with Session() as session:
             query = select(Driver).filter(Driver.id_people == id_people)
             result = await session.execute(query)
@@ -310,11 +314,11 @@ class UtilityFunction:
                 all_info = await UtilityFunction.find_distance_of_driver(i.id_driver)
                 trip = {
                     'date_trip': i.date_trip,
-                    'trip_forward': ' - '.join(list(map(lambda x: dict_point[x], all_info[3]))),
+                    'trip_forward': ' - '.join(list(map(lambda x: dict_point[x]['name_point'], all_info[3]))),
                     'distance_forward': all_info[2],
-                    'trip_away': ' - '.join(list(map(lambda x: dict_point[x], all_info[5]))),
+                    'trip_away': ' - '.join(list(map(lambda x: dict_point[x]['name_point'], all_info[5]))),
                     'distance_away': all_info[4],
-                    'cost': 100
+                    'list_driver': list(map(lambda x: x.people.id_point, all_info[0]))
                 }
                 list_trip.append(trip)
             return list_trip
@@ -334,6 +338,8 @@ class UtilityFunction:
         refueling = await UtilityFunction.get_quantity(id_people)
         driver = await UtilityFunction.get_driver(id_people)
 
+
+
         list_trip_month = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver))
         list_refueling_mount = list(filter(lambda x: date_finish >= x.date_refueling.date() >= date_start, refueling))
 
@@ -350,6 +356,48 @@ class UtilityFunction:
             query = select(People).filter(People.id_people == id_people)
             result = await session.execute(query)
             worker = result.unique().scalars().first()
+
+            query = select(Driver.id_driver).filter(Driver.id_people == id_people)
+            result = await session.execute(query)
+            id_driver = result.unique().scalars().all()
+
+            query = select(Passenger)
+            result = await session.execute(query)
+            models = result.scalars().all()
+
+            lst = []
+            for i in id_driver:
+                list_id_passenger = list(filter(lambda x: x.id_driver == i, models))
+                lst.extend(list_id_passenger)
+
+            gg = []
+            ff = [i['list_driver'] for i in driver]
+            for i in ff:
+                gg.extend(i)
+
+            costing = []
+
+            a = worker.id_point
+
+            query = await session.execute(select(Route))
+            res_route = query.unique().scalars().all()
+
+
+            for i in gg:
+                one_way = list(filter(lambda x: x.id_start_point == a and x.id_finish_point == i, res_route))
+                other_way = list(filter(lambda x: x.id_start_point == i and x.id_finish_point == a, res_route))
+
+                if len(one_way) == 0:
+                    length = other_way[0].distance
+                else:
+                    length = one_way[0].distance
+
+                if length > 0:
+                    costing.append(100)
+                else:
+                    costing.append(50)
+
+
         spent_gas_month = distance_month * average_consumption / 100
         spent_gas_all = all_distance * average_consumption / 100
 
@@ -361,11 +409,14 @@ class UtilityFunction:
         balance_all = spent_round_all - all_refueling
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
-        return (f'Сотрудник {worker.first_name} {worker.last_name}: '
-                 f'Название - {update_point[1]}, '
-                 f'Стоимость - {update_point[2]}, '
-                 f'Координаты - [{update_point[3]}: {update_point[4]}]')
-            balance_all, balance_month, result, all_distance, spent_round_all, distance_month, spent_round_month, all_refueling, refueling_month, list_trip_month)
+        point = await DataGet.all_point()
+
+        return sum(costing), gg,  #point, (f'Данные за {month[data.month_trip]}',
+        #         f'Сотрудник {worker.first_name} {worker.last_name}: ',
+        #         f'Остаток текущий {balance_all} ',
+        #         f'Остаток на начало месяца {result} ',
+        #         f'Заправки {refueling_month}', list_refueling_mount,
+        #         f'Поездки'), list_trip_month
 
 
 class DataPatch:

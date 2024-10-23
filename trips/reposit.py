@@ -166,25 +166,21 @@ class UtilityFunction:
     @staticmethod
     async def get_route_length(trip: list) -> int:
         async with Session() as session:
-            id_trip = []
+            all_route = (await session.execute(select(Route))).unique().scalars().all()
+            all_length = []
             for i in range(len(trip) - 1):
                 a, b = trip[i], trip[i + 1]
-                query = await session.execute(
-                    select(Route)
-                    .filter(Route.id_start_point == int(a), Route.id_finish_point == int(b))
-                )
-                one_way = query.unique().scalars().first()
-                query = await session.execute(
-                    select(Route)
-                    .filter(Route.id_start_point == int(b), Route.id_finish_point == int(a))
-                )
-                other_way = query.unique().scalars().first()
-                if one_way is None:
-                    id_trip.append(other_way.id_route)
+                one_way = list(filter(lambda x: x.id_start_point == a and x.id_finish_point == b, all_route))
+                other_way = list(filter(lambda x: x.id_start_point == b and x.id_finish_point == a, all_route))
+                if len(one_way) == 0 and len(other_way) == 0:
+                    raise HTTPException(status_code=422, detail='Маршрут не найден')
                 else:
-                    id_trip.append(one_way.id_route)
-            query = (await session.execute(select(Route))).unique().scalars().all()
-            return sum([i.distance for i in query if i.id_route in id_trip])
+                    if len(one_way) == 0:
+                        length = other_way[0].distance
+                    else:
+                        length = one_way[0].distance
+                all_length.append(length)
+            return sum(all_length)
 
     @staticmethod
     async def get_name_point(data: RouteAdd):
@@ -304,7 +300,6 @@ class UtilityFunction:
     async def get_length(cls, a: int, b: int, all_route):
         one_way = list(filter(lambda x: x.id_start_point == a and x.id_finish_point == b, all_route))
         other_way = list(filter(lambda x: x.id_start_point == b and x.id_finish_point == a, all_route))
-
         if len(one_way) == 0 and len(other_way) == 0:
             raise HTTPException(status_code=422, detail='Маршрут не найден')
         else:

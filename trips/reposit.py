@@ -323,8 +323,10 @@ class UtilityFunction:
                 trip = {
                     'date_trip': i.date_trip,
                     'trip_forward': ' - '.join(list(map(lambda x: dict_point[x]['name_point'], all_info[3]))),
+                    'point_trip_forward': all_info[3],
                     'distance_forward': all_info[2],
                     'trip_away': ' - '.join(list(map(lambda x: dict_point[x]['name_point'], all_info[5]))),
+                    'point_trip_away': all_info[5],
                     'distance_away': all_info[4],
                     'passenger': all_info[0],
                     'other_route': all_info[1]
@@ -365,11 +367,11 @@ class UtilityFunction:
             query = await session.execute(select(Route))
             all_route = query.unique().scalars().all()
 
-        list_driver = list(filter(lambda x: date_finish >= x['date_trip'] >= date_start, driver['trip']))
-        list_passenger = list(chain(*(map(lambda x: x['passenger'], list_driver))))
+        #list_pas = list(filter(lambda x: x['passenger'], list_trip_month))
+        list_passenger = list(chain(*(map(lambda x: x['passenger'], list_trip_month))))
         list_point_passenger = list(map(lambda x: x.people.id_point, list_passenger))
 
-        list_other_route = list(chain(*(map(lambda x: x['other_route'], list_driver))))
+        list_other_route = list(chain(*(map(lambda x: x['other_route'], list_trip_month))))
         list_point_other_route = list(map(lambda x: x.organization.id_point, list_other_route))
 
         point_of_driver = [key for key, val in driver['all_point'].items() if

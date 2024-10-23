@@ -26,11 +26,10 @@ async def lifespan(app: FastAPI):
     yield
     print('Выключение')
 
-
 app_route = FastAPI(title='Transport', lifespan=lifespan)
 
-app_route.mount('/trips/static/image', StaticFiles(directory='trips/static/image'), name='static')
-app_route.mount('/trips/static/css', StaticFiles(directory='trips/static/css'), name='css')
+# app_route.mount('/trips/static/image', StaticFiles(directory='trips/static/image'), name='static')
+# app_route.mount('/trips/static/css', StaticFiles(directory='trips/static/css'), name='css')
 
 app_route.include_router(point)
 app_route.include_router(route)
@@ -46,6 +45,7 @@ app_route.include_router(passenger)
 app_route.include_router(other_route)
 app_route.include_router(refueling)
 app_route.include_router(router_page)
+
 
 origins = [
     'http://localhost:8000',
@@ -64,6 +64,8 @@ app_route.add_middleware(
 
 
 # if __name__ == '__main__':
-#     uvicorn.run(app_route, host="0.0.0.0", port=8000, log_level="info")
+#     uvicorn.run('trips.main:app_route', host="0.0.0.0", port=8000, reload=True, log_level="info")
 
 # uvicorn trips.main:app_route --host 0.0.0.0 --port 8000 --reload
+# ssh -R 80:localhost:8000 nokey@localhost.run
+

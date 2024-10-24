@@ -1,8 +1,8 @@
 """Database creation
 
-Revision ID: ffbf0fa365b1
+Revision ID: a74d5557b9bd
 Revises: 
-Create Date: 2024-09-05 11:49:11.235357
+Create Date: 2024-10-24 08:00:50.656454
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "ffbf0fa365b1"
+revision: str = "a74d5557b9bd"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -44,6 +44,8 @@ def upgrade() -> None:
         "point",
         sa.Column("id_point", sa.Integer(), nullable=False),
         sa.Column("name_point", sa.String(length=100), nullable=False),
+        sa.Column("latitude", sa.Float(), nullable=True),
+        sa.Column("longitude", sa.Float(), nullable=True),
         sa.Column("cost", sa.Integer(), nullable=False),
         sa.Column(
             "created_on",
@@ -99,6 +101,31 @@ def upgrade() -> None:
         sa.UniqueConstraint("name_wd"),
     )
     op.create_table(
+        "organization",
+        sa.Column("id_organization", sa.Integer(), nullable=False),
+        sa.Column("name_organization", sa.String(length=50), nullable=False),
+        sa.Column("id_point", sa.Integer(), nullable=False),
+        sa.Column(
+            "created_on",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_on",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["id_point"], ["point.id_point"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id_organization"),
+        sa.UniqueConstraint(
+            "name_organization", "id_point", name="organization_uc"
+        ),
+    )
+    op.create_table(
         "people",
         sa.Column("id_people", sa.Integer(), nullable=False),
         sa.Column("first_name", sa.String(length=50), nullable=False),
@@ -107,6 +134,7 @@ def upgrade() -> None:
         sa.Column("id_point", sa.Integer(), nullable=False),
         sa.Column("id_position", sa.Integer(), nullable=False),
         sa.Column("driving_licence", sa.String(length=50), nullable=True),
+        sa.Column("ppr_card", sa.String(), nullable=True),
         sa.Column(
             "created_on",
             sa.DateTime(timezone=True),
@@ -135,6 +163,7 @@ def upgrade() -> None:
             "id_position",
             name="people_uc",
         ),
+        sa.UniqueConstraint("ppr_card"),
     )
     op.create_table(
         "route",
@@ -195,6 +224,7 @@ def upgrade() -> None:
         sa.Column("id_driver", sa.Integer(), nullable=False),
         sa.Column("id_people", sa.Integer(), nullable=False),
         sa.Column("date_trip", sa.Date(), nullable=False),
+        sa.Column("where_drive", sa.Integer(), nullable=False),
         sa.Column(
             "created_on",
             sa.DateTime(timezone=True),
@@ -210,16 +240,25 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["id_people"], ["people.id_people"], ondelete="CASCADE"
         ),
+        sa.ForeignKeyConstraint(
+            ["where_drive"], ["where_drive.id_wd"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id_driver"),
-        sa.UniqueConstraint("id_people", "date_trip", name="people_date_uc"),
+        sa.UniqueConstraint(
+            "id_driver", "id_people", "date_trip", name="people_date_uc"
+        ),
     )
     op.create_table(
         "refueling",
         sa.Column("id_refueling", sa.Integer(), nullable=False),
         sa.Column("id_fuel", sa.Integer(), nullable=False),
         sa.Column("id_people", sa.Integer(), nullable=False),
-        sa.Column("quantity", sa.Float(precision=2), nullable=False),
-        sa.Column("date_refueling", sa.Date(), nullable=False),
+        sa.Column(
+            "quantity",
+            sa.Float(precision=2, asdecimal=2, decimal_return_scale=2),
+            nullable=False,
+        ),
+        sa.Column("date_refueling", sa.DateTime(), nullable=False),
         sa.Column(
             "created_on",
             sa.DateTime(timezone=True),
@@ -239,6 +278,13 @@ def upgrade() -> None:
             ["id_people"], ["people.id_people"], ondelete="CASCADE"
         ),
         sa.PrimaryKeyConstraint("id_refueling"),
+        sa.UniqueConstraint(
+            "id_fuel",
+            "id_people",
+            "quantity",
+            "date_refueling",
+            name="refueling_uc",
+        ),
     )
     op.create_table(
         "car_fuel",
@@ -265,6 +311,44 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id_car_fuel"),
         sa.UniqueConstraint("id_car", "id_fuel", name="car_fuel_uc"),
+    )
+    op.create_table(
+        "other_route",
+        sa.Column("id_other_route", sa.Integer(), nullable=False),
+        sa.Column("order", sa.Integer(), nullable=False),
+        sa.Column("id_organization", sa.Integer(), nullable=False),
+        sa.Column("id_driver", sa.Integer(), nullable=False),
+        sa.Column("where_drive", sa.Integer(), nullable=False),
+        sa.Column(
+            "created_on",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_on",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["id_driver"], ["driver.id_driver"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["id_organization"],
+            ["organization.id_organization"],
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["where_drive"], ["where_drive.id_wd"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id_other_route"),
+        sa.UniqueConstraint(
+            "id_organization",
+            "id_driver",
+            "where_drive",
+            name="other_route_uc",
+        ),
     )
     op.create_table(
         "passenger",
@@ -305,12 +389,14 @@ def upgrade() -> None:
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table("passenger")
+    op.drop_table("other_route")
     op.drop_table("car_fuel")
     op.drop_table("refueling")
     op.drop_table("driver")
     op.drop_table("car")
     op.drop_table("route")
     op.drop_table("people")
+    op.drop_table("organization")
     op.drop_table("where_drive")
     op.drop_table("position")
     op.drop_table("point")

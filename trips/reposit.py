@@ -3,7 +3,7 @@ from hashlib import md5
 from functools import reduce
 from itertools import chain
 import calendar
-
+from operator import index
 
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError, NoResultFound
@@ -357,8 +357,8 @@ class UtilityFunction:
             date_finish = get_date_of_month[1]
 
         refueling = await UtilityFunction.get_quantity(id_people)
-        list_refueling_mount = list(filter(lambda x: date_finish >= x.date_refueling.date() >= date_start, refueling))
-        refueling_month = sum([i.quantity for i in list_refueling_mount])
+        list_refueling_month = list(filter(lambda x: date_finish >= x.date_refueling.date() >= date_start, refueling))
+        refueling_month = sum([i.quantity for i in list_refueling_month])
         all_refueling = sum([i.quantity for i in refueling])
 
         driver = await UtilityFunction.get_driver(id_people)
@@ -375,17 +375,40 @@ class UtilityFunction:
             all_route = query.unique().scalars().all()
 
         #list_pas = list(filter(lambda x: x['passenger'], list_trip_month))
-        list_pas_fwd = list(map(lambda x: x['point_trip_forward'][:-1],
-                                filter(lambda x: len(x['point_trip_forward']) > 2, list_trip_month)))
-        list_pas_away = list(map(lambda x: x['point_trip_away'][1:],
-                                 filter(lambda x: len(x['point_trip_away']) > 2, list_trip_month)))
-        all_trip_point = []
-        all_trip_point.extend(list_pas_fwd)
-        all_trip_point.extend(list_pas_away)
+        point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
+
+        route_pas_fwd = list(map(lambda x: x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory[0])],
+                                filter(lambda x: len(x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory[0])+1]) > 2, list_trip_month)))
+
+        route_or_fwd = list(map(lambda x: x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory[0]):],
+                             filter(lambda x: len(x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory[0]):]) > 1, list_trip_month)))
+
+        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory[0])+1:],
+                                 filter(lambda x: len(x['point_trip_away'][x['point_trip_away'].index(point_of_factory[0]):]) > 2, list_trip_month)))
+
+        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory[0])+1],
+                                filter(lambda x: len(x['point_trip_away'][:x['point_trip_away'].index(point_of_factory[0])+1]) > 1, list_trip_month)))
+        # route_away = list(map(lambda x: x['point_trip_away'],
+        #                          filter(lambda x: len(x['point_trip_away']) > 2, list_trip_month)))
+
+        #point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
+        # for i in [2, 13, 12, 19]:
+        #     idx = i.index(point_of_factory[0])
+        #list_pas_fwd = list(map(lambda x: x[:x.index(point_of_factory[0])], route_fwd))
+
+        all_pas_point = []
+        all_pas_point.extend(route_pas_fwd)
+        all_pas_point.extend(route_pas_away)
+
+        all_or_point = []
+        all_or_point.extend(route_or_fwd)
+        all_or_point.extend(route_or_away)
 
         time_start = datetime.now()
-        costing = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_trip_point]
+        costing_pas = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_pas_point]
         time_finish = datetime.now()
+        costing_or = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_or_point]
+
 
         #costing = list(map(lambda x: await UtilityFunction.get_length(x, all_route, driver), all_trip_point))
        # cost_passenger = [driver['all_point'][i]['cost'] if map(lambda x: await UtilityFunction.get_length(x[0], i, all_route), i[:-1]) > 0 else 50 for i in all_trip_point]
@@ -417,7 +440,7 @@ class UtilityFunction:
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
 
-        return time_finish - time_start, costing, all_trip_point
+        return time_finish - time_start, len(costing_pas), sum(costing_pas), len(costing_or), sum(costing_or), costing_or, len(all_or_point), all_or_point
         # (f'Данные за {month[data.month_trip]}',
         #         f'Заезды {sum(cost_passenger) + sum(cost_other)}',
         #         #f'Сотрудник {worker.first_name} {worker.last_name}: ',

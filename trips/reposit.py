@@ -297,7 +297,7 @@ class UtilityFunction:
         return refueling
 
     @classmethod
-    async def get_sum_cost(cls, trip: list, all_route, driver):
+    async def get_sum_cost(cls, trip: list, all_route, driver, factory):
         costing = []
         for i in range(len(trip) - 1):
             one_way = list(filter(lambda x: x.id_start_point == trip[i] and x.id_finish_point == trip[i+1], all_route))
@@ -312,7 +312,7 @@ class UtilityFunction:
                         costing.append(50)
                 else:
                     if one_way[0].distance > 0:
-                        costing.append(driver['all_point'][trip[i + 1]]['cost'])
+                        costing.append(driver['all_point'][trip[i+1]]['cost'])
                     else:
                         costing.append(50)
         return sum(costing)
@@ -374,27 +374,19 @@ class UtilityFunction:
             query = await session.execute(select(Route))
             all_route = query.unique().scalars().all()
 
-        #list_pas = list(filter(lambda x: x['passenger'], list_trip_month))
-        point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
+        point_of_factory = await UtilityFunction.get_id_point_factory()
 
-        route_pas_fwd = list(map(lambda x: x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory[0])],
-                                filter(lambda x: len(x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory[0])+1]) > 2, list_trip_month)))
+        route_pas_fwd = list(map(lambda x: x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)],
+                                filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)+1]) > 2, list_trip_month)))
+        route_or_fwd = list(map(lambda x: x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):],
+                             filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):]) > 1, list_trip_month)))
+        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory)+1:],
+                                 filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][x['point_trip_away'].index(point_of_factory):]) > 2, list_trip_month)))
+        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1],
+                                filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1]) > 1, list_trip_month)))
 
-        route_or_fwd = list(map(lambda x: x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory[0]):],
-                             filter(lambda x: len(x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory[0]):]) > 1, list_trip_month)))
-
-        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory[0])+1:],
-                                 filter(lambda x: len(x['point_trip_away'][x['point_trip_away'].index(point_of_factory[0]):]) > 2, list_trip_month)))
-
-        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory[0])+1],
-                                filter(lambda x: len(x['point_trip_away'][:x['point_trip_away'].index(point_of_factory[0])+1]) > 1, list_trip_month)))
-        # route_away = list(map(lambda x: x['point_trip_away'],
-        #                          filter(lambda x: len(x['point_trip_away']) > 2, list_trip_month)))
-
-        #point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
-        # for i in [2, 13, 12, 19]:
-        #     idx = i.index(point_of_factory[0])
-        #list_pas_fwd = list(map(lambda x: x[:x.index(point_of_factory[0])], route_fwd))
+        list(map(lambda x: x.reverse(), route_pas_away))
+        list(map(lambda x: x.reverse(), route_or_away))
 
         all_pas_point = []
         all_pas_point.extend(route_pas_fwd)
@@ -404,29 +396,8 @@ class UtilityFunction:
         all_or_point.extend(route_or_fwd)
         all_or_point.extend(route_or_away)
 
-        time_start = datetime.now()
-        costing_pas = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_pas_point]
-        time_finish = datetime.now()
-        costing_or = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_or_point]
-
-
-        #costing = list(map(lambda x: await UtilityFunction.get_length(x, all_route, driver), all_trip_point))
-       # cost_passenger = [driver['all_point'][i]['cost'] if map(lambda x: await UtilityFunction.get_length(x[0], i, all_route), i[:-1]) > 0 else 50 for i in all_trip_point]
-        # cost_other = [driver['all_point'][i]['cost'] if await UtilityFunction.get_length(point_of_factory[0], i, all_route) > 0 else 50 for i in list_point_other_route]
-
-        #ghg =list(map(lambda x: x.passenger.people.id_point, list_pas_f))
-
-        # list_passenger = list(chain(*(map(lambda x: x['passenger'], list_trip_month))))
-        # list_point_passenger = list(map(lambda x: x.people.id_point, list_passenger))
-        #
-        # list_other_route = list(chain(*(map(lambda x: x['other_route'], list_trip_month))))
-        # list_point_other_route = list(map(lambda x: x.organization.id_point, list_other_route))
-
-        # point_of_driver = [key for key, val in driver['all_point'].items() if
-        #                    len(val['people']) != 0 and val['people'][0].id_people == id_people]
-        # point_of_factory = [key for key, val in driver['all_point'].items() if val['name_point'] == 'Завод']
-        # cost_passenger = [driver['all_point'][i]['cost'] if await UtilityFunction.get_length(point_of_driver[0], i, all_route) > 0 else 50 for i in list_point_passenger]
-        # cost_other = [driver['all_point'][i]['cost'] if await UtilityFunction.get_length(point_of_factory[0], i, all_route) > 0 else 50 for i in list_point_other_route]
+        cost_passenger = [await UtilityFunction.get_sum_cost(i, all_route, driver, point_of_factory) for i in all_pas_point]
+        cost_other_route = [await UtilityFunction.get_sum_cost(i, all_route, driver, point_of_factory) for i in all_or_point]
 
         spent_gas_month = distance_month * average_consumption / 100
         spent_gas_all = all_distance * average_consumption / 100
@@ -440,14 +411,13 @@ class UtilityFunction:
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
 
-        return time_finish - time_start, len(costing_pas), sum(costing_pas), len(costing_or), sum(costing_or), costing_or, len(all_or_point), all_or_point
-        # (f'Данные за {month[data.month_trip]}',
-        #         f'Заезды {sum(cost_passenger) + sum(cost_other)}',
-        #         #f'Сотрудник {worker.first_name} {worker.last_name}: ',
-        #         f'Остаток текущий {balance_all} ',
-        #         f'Остаток на начало месяца {result} ',
-        #         f'Заправки {refueling_month}', list_refueling_mount,
-        #         f'Поездки'), list_trip_month
+        return (f'Данные за {month[data.month_trip]}',
+                f'Расстояние {distance_month}',
+                f'Заезды {sum(cost_passenger) + sum(cost_other_route)}',
+                f'Остаток текущий {balance_all} ',
+                f'Остаток на начало месяца {result} ',
+                f'Заправки {refueling_month}', list_refueling_month,
+                f'Поездки'), list_trip_month
 
 
 class DataPatch:

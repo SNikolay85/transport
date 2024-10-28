@@ -1,11 +1,17 @@
+import asyncio
+
 import telebot
 from telebot import types
 from config import TOKEN_TBOT
+from reposit import DataGet, UtilityFunction
+from trips.reposit import month
+from trips.schema import DriverDate
 
 bot = telebot.TeleBot(token=TOKEN_TBOT,
                       threaded=True,
                       num_threads=300)
 
+bot.delete_webhook()
 
 # @bot.message_handler(content_types=['text'])
 # def get_text_messages(message):
@@ -34,9 +40,11 @@ def start_bot(message):
 def response(function_call):
     if function_call.message:
         if function_call.data == "yes":
-            second_mess = "Мы облачная платформа для разработчиков и бизнеса. Более детально можешь ознакомиться с нами на нашем сайте!"
+            fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
+            print(fg)
+            second_mess = f'<b>{fg[0]}<b>, <br>{fg[1]}, <br>{fg[2]}, <br>{fg[3]}, <br>{fg[4]}'
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("Перейти на сайт", url="https://timeweb.cloud/"))
+            markup.add(types.InlineKeyboardButton("Перейти на сайт", url="https://127.0.0.1:8000/driver/balance/1?month_trip=10"))
             bot.send_message(function_call.message.chat.id, second_mess, reply_markup=markup)
             bot.answer_callback_query(function_call.id)
 

@@ -415,9 +415,9 @@ class UtilityFunction:
                 f'Расстояние {distance_month}',
                 f'Заезды {sum(cost_passenger) + sum(cost_other_route)}',
                 f'Остаток текущий {balance_all} ',
-                f'Остаток на начало месяца {result} ',
-                f'Заправки {refueling_month}', list_refueling_month,
-                f'Поездки'), list_trip_month
+                f'Остаток на начало месяца {result} ')
+                # f'Заправки {refueling_month}', list_refueling_month,
+                # f'Поездки'), list_trip_month
 
 
 class DataPatch:

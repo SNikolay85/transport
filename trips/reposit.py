@@ -3,6 +3,7 @@ from hashlib import md5
 from functools import reduce
 from itertools import chain
 import calendar
+import re
 from operator import index
 
 from fastapi import HTTPException
@@ -100,6 +101,26 @@ class UtilityFunction:
             result = await session.execute(query)
             id_people = result.unique().scalars().first()
             return id_people
+
+    @staticmethod
+    async def id_people(string: str) -> int:
+        pattern = r'\A[а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+\Z'
+        result = re.search(pattern, string)
+        if result is not None:
+            fio = result[0].split(sep=' ')
+            async with Session() as session:
+                query = select(People.id_people).filter(and_(
+                    People.first_name == fio[1].capitalize(),
+                    People.last_name == fio[0].capitalize(),
+                    People.patronymic == fio[2].capitalize()))
+                id_people = (await session.execute(query)).unique().scalars().first()
+                if id_people is not None:
+                    return id_people
+                return 0
+        else:
+            return -1
+
+
 
     @staticmethod
     async def get_id_fuel(name_fuel):

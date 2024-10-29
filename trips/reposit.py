@@ -31,7 +31,7 @@ from trips.schema import FullPassengerRe, FullPassengerDriverRe, FullOtherRouteD
 import requests
 from geopy.geocoders import Nominatim
 
-
+users = {}
 debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
 month = {
     None: 'Все месяца',
@@ -44,6 +44,15 @@ month = {
 
 class UtilityFunction:
     SALT = SALT
+
+    @classmethod
+    def add_dict_users(cls, id_user_tg, id_people):
+        users.setdefault(id_people, id_user_tg)
+        return users
+
+    @classmethod
+    def dict_users(cls):
+        return users
 
     @classmethod
     def get_date_of_month(cls, months):
@@ -119,8 +128,6 @@ class UtilityFunction:
                 return 0
         else:
             return -1
-
-
 
     @staticmethod
     async def get_id_fuel(name_fuel):
@@ -318,7 +325,7 @@ class UtilityFunction:
         return refueling
 
     @classmethod
-    async def get_sum_cost(cls, trip: list, all_route, driver, factory):
+    async def get_sum_cost(cls, trip: list, all_route, driver):
         costing = []
         for i in range(len(trip) - 1):
             one_way = list(filter(lambda x: x.id_start_point == trip[i] and x.id_finish_point == trip[i+1], all_route))
@@ -417,8 +424,10 @@ class UtilityFunction:
         all_or_point.extend(route_or_fwd)
         all_or_point.extend(route_or_away)
 
-        cost_passenger = [await UtilityFunction.get_sum_cost(i, all_route, driver, point_of_factory) for i in all_pas_point]
-        cost_other_route = [await UtilityFunction.get_sum_cost(i, all_route, driver, point_of_factory) for i in all_or_point]
+        cost_passenger = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_pas_point]
+        cost_other_route = [await UtilityFunction.get_sum_cost(i, all_route, driver) for i in all_or_point]
+
+        cost_worker = [200 for i in list_trip_month if list(filter(lambda x: 'Сотрудник' in x.organization.name_organization, i['other_route'])) != []]
 
         spent_gas_month = distance_month * average_consumption / 100
         spent_gas_all = all_distance * average_consumption / 100
@@ -434,11 +443,11 @@ class UtilityFunction:
 
         return (f'Данные за {month[data.month_trip]}',
                 f'Расстояние {distance_month}',
-                f'Заезды {sum(cost_passenger) + sum(cost_other_route)}',
-                f'Остаток текущий {balance_all} ',
-                f'Остаток на начало месяца {result} ')
+                f'Заезды {sum(cost_passenger) + sum(cost_other_route) + sum(cost_worker)}',
+                f'Остаток текущий {balance_all}',
+                f'Остаток на начало месяца {result}')
                 # f'Заправки {refueling_month}', list_refueling_month,
-                # f'Поездки'), list_trip_month
+                #f'Поездки'), list_trip_month
 
 
 class DataPatch:

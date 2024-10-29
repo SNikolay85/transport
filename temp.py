@@ -28,15 +28,13 @@ from fastapi.responses import FileResponse
 #
 # date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
 # date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
-
-
-fg = asyncio.run(UtilityFunction.id_people('пешилов Николай Юрьевич'))
-if fg == 0:
-    print(f'вас нет в базе')
-elif fg == -1:
-    print(f'неправельно ввели данные')
+user = {1: 3434, 2: 3535}
+g = 343
+if g in user.values():
+    print('Yes')
 else:
-    print(fg)
+    print('No')
+
 
 app = FastAPI()
 

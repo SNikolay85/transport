@@ -14,31 +14,88 @@ bot = telebot.TeleBot(token=TOKEN_TBOT,
 bot.delete_webhook()
 
 
-@bot.message_handler(commands=['Регистрация'])
-def registration(message):
-    users = {}
-    first_message = f'Для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)'
-    fio = 'Спешилов Николай Юрьевич'
-    id_people = asyncio.run(UtilityFunction.id_people(fio))
-    if id_people == 0:
-        answer = f'Вас нет в базе'
-    elif id_people == -1:
-        answer = f'Неправельно ввели данные'
-    else:
-        users[id_people] = message.from_user.id
-        answer = f'Успешно зарегестрировались'
-    bot.send_message(message.from_user.id, first_message)
-    bot.send_message(message.from_user.id, answer)
-    # bot.send_message(message.chat.id, str(users))
-
 # @bot.message_handler(content_types=['text'])
 # def get_text_messages(message):
-#     if message.text == "Привет":
+#     if message.text.lower() == "привет":
 #         bot.send_message(message.from_user.id, "Привет, чем я могу тебе помочь?")
 #     elif message.text == "/help":
-#         bot.send_message(message.from_user.id, "Напиши привет")
+#         bot.send_message(message.chat.id, message)
 #     else:
 #         bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help.")
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    print(UtilityFunction.dict_users())
+    if message.from_user.id in UtilityFunction.dict_users().values():
+        button_fuel = types.KeyboardButton(text='Баланс топлива')
+        button_cost = types.KeyboardButton(text='Сумма заездов')
+        markup.add(button_fuel).row(button_cost)
+        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} Вы зарегестрированый пользователь!',
+                         reply_markup=markup)
+    else:
+        button_registration = types.KeyboardButton(text='Регистрация')
+        markup.add(button_registration)
+        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)', reply_markup=markup)
+        bot.register_next_step_handler(message, registration)
+
+
+def registration(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    if message.text != "":
+        fio = message.text.strip()
+        id_people = asyncio.run(UtilityFunction.id_people(fio))
+        if id_people == 0:
+            answer = f'Вас нет в базе'
+        elif id_people == -1:
+            answer = f'Неправельно ввели данные'
+        else:
+            UtilityFunction.add_dict_users(message.from_user.id, id_people)
+            #users[id_people] = message.from_user.id
+            answer = f'Успешно зарегестрировались'
+        bot.send_message(message.chat.id, answer)
+        button_fuel = types.KeyboardButton(text='Баланс топлива')
+        button_cost = types.KeyboardButton(text='Сумма заездов')
+        markup.row(button_fuel, button_cost)
+        bot.send_message(message.chat.id,
+                         text='Получить информацию',
+                         reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, 'Введите данные')
+
+def on_click(message):
+    if message.text == 'Баланс топлива':
+        fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
+        bot.send_message(message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}',
+                         parse_mode='html')
+
+
+@bot.callback_query_handler(func=lambda callback: True)
+def response(callback):
+    if callback.data == 'fuel':
+        fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
+        bot.send_message(callback.message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}', parse_mode='html')
+    elif callback.data == 'registration':
+        users = {}
+        first_message = f'Для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)'
+        bot.send_message(callback.message.chat.id, 'Введите данные')
+        if callback.message.from_user.text != "":
+            fio = callback.message.from_user.text
+            id_people = asyncio.run(UtilityFunction.id_people(fio))
+            if id_people == 0:
+                answer = f'Вас нет в базе'
+            elif id_people == -1:
+                answer = f'Неправельно ввели данные'
+            else:
+                users[id_people] = callback.message.from_user.id
+                answer = f'Успешно зарегестрировались'
+            bot.send_message(callback.message.chat.id, answer)
+        else:
+            bot.send_message(callback.message.chat.id, 'Введите данные')
+        bot.send_message(callback.message.chat.id, f'<b>{first_message}</b>', parse_mode='html')
+
+
 
 
 # @bot.message_handler(commands=['start'])
@@ -66,8 +123,6 @@ def registration(message):
 #             bot.send_message(function_call.message.chat.id, second_mess, reply_markup=markup)
 #             bot.answer_callback_query(function_call.id)
 
-
-#bot.polling(none_stop=True, interval=0)
 
 
 bot.infinity_polling()

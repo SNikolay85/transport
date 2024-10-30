@@ -163,8 +163,8 @@ class FullPeRe(FullPeople):
 class IdentificationAdd(BaseModel):
     id_people: int
     id_tg: str
-    login: str
-    password: str
+    login: Optional[str] = 'user'
+    password: Optional[str] = 'user'
     id_role: int
 
 

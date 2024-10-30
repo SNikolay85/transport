@@ -3,9 +3,9 @@ import asyncio
 import telebot
 from telebot import types
 from config import TOKEN_TBOT
-from reposit import DataGet, UtilityFunction
+from reposit import DataGet, DataLoads, UtilityFunction
 from trips.reposit import month
-from trips.schema import DriverDate
+from trips.schema import DriverDate, IdentificationAdd
 
 bot = telebot.TeleBot(token=TOKEN_TBOT,
                       threaded=True,
@@ -27,17 +27,15 @@ bot.delete_webhook()
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    print(UtilityFunction.dict_users())
-    if message.from_user.id in UtilityFunction.dict_users().values():
+    print(UtilityFunction.get_identification())
+    if message.from_user.id in UtilityFunction.get_identification():
         button_fuel = types.KeyboardButton(text='Баланс топлива')
         button_cost = types.KeyboardButton(text='Сумма заездов')
         markup.add(button_fuel).row(button_cost)
         bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} Вы зарегестрированый пользователь!',
                          reply_markup=markup)
     else:
-        button_registration = types.KeyboardButton(text='Регистрация')
-        markup.add(button_registration)
-        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)', reply_markup=markup)
+        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)')
         bot.register_next_step_handler(message, registration)
 
 
@@ -45,13 +43,16 @@ def registration(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
     if message.text != "":
         fio = message.text.strip()
-        id_people = asyncio.run(UtilityFunction.id_people(fio))
+        id_people = UtilityFunction.id_people(fio)
         if id_people == 0:
             answer = f'Вас нет в базе'
         elif id_people == -1:
             answer = f'Неправельно ввели данные'
         else:
-            UtilityFunction.add_dict_users(message.from_user.id, id_people)
+            id_role = UtilityFunction.get_id_role()
+            asyncio.run(DataLoads.add_identification(data=IdentificationAdd(id_tg=str(message.from_user.id),
+                                                                      id_people=id_people,
+                                                                      id_role=id_role)))
             #users[id_people] = message.from_user.id
             answer = f'Успешно зарегестрировались'
         bot.send_message(message.chat.id, answer)

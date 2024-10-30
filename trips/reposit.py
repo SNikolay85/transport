@@ -13,9 +13,9 @@ from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, and_, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 
-from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization, Role
+from trips.models import Point, Route, Fuel, Car, CarFuel, Position, Organization, Role
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, IdentificationUser
-
+from trips.models import Session_sync, Session
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
 from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd, IdentificationAdd, RoleAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
@@ -34,7 +34,6 @@ from trips.schema import FullRoleRe, FullIdentificationRe
 import requests
 from geopy.geocoders import Nominatim
 
-users = {}
 debts = {1: 28, 2: 15, 3: 3, 4: -163, 5: -387, 6: -40, 7: 27, 8: 8, 9: -72, 10: -84}
 month = {
     None: 'Все месяца',
@@ -49,13 +48,12 @@ class UtilityFunction:
     SALT = SALT
 
     @classmethod
-    def add_dict_users(cls, id_user_tg, id_people):
-        users.setdefault(id_people, id_user_tg)
-        return users
-
-    @classmethod
-    def dict_users(cls):
-        return users
+    def get_identification(cls):
+        with Session_sync() as session:
+            query = select(IdentificationUser.id_tg)
+            result = session.execute(query)
+            id_tg = result.unique().scalars().all()
+            return id_tg
 
     @classmethod
     def get_date_of_month(cls, months):
@@ -75,8 +73,8 @@ class UtilityFunction:
             case 12: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
 
     @staticmethod
-    def hash_password(self, password: str):
-        password = f"{self.SALT}{password}"
+    def hash_password(password: str):
+        password = f"{SALT}{password}"
         password = password.encode()
         password = md5(password).hexdigest()
         return password
@@ -115,17 +113,17 @@ class UtilityFunction:
             return id_people
 
     @staticmethod
-    async def id_people(string: str) -> int:
+    def id_people(string: str) -> int:
         pattern = r'\A[а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+\Z'
         result = re.search(pattern, string)
         if result is not None:
             fio = result[0].split(sep=' ')
-            async with Session() as session:
+            with Session_sync() as session:
                 query = select(People.id_people).filter(and_(
                     People.first_name == fio[1].capitalize(),
                     People.last_name == fio[0].capitalize(),
                     People.patronymic == fio[2].capitalize()))
-                id_people = (await session.execute(query)).unique().scalars().first()
+                id_people = (session.execute(query)).unique().scalars().first()
                 if id_people is not None:
                     return id_people
                 return 0
@@ -242,6 +240,14 @@ class UtilityFunction:
             result = await session.execute(query)
             id_point_factory = result.unique().scalars().first()
             return id_point_factory
+
+    @staticmethod
+    def get_id_role() -> int:
+        with Session_sync() as session:
+            query = select(Role.id_role).filter(Role.name_role == 'worker')
+            result = session.execute(query)
+            id_role = result.unique().scalars().first()
+            return id_role
 
     @staticmethod
     async def check_name_point(name: str) -> bool:
@@ -1111,11 +1117,14 @@ class DataLoads:
 
     @classmethod
     async def add_identification(cls, data: IdentificationAdd) -> dict:
+        password = UtilityFunction.hash_password(str(data.password))
         async with Session() as session:
             query = select(IdentificationUser.id_identification)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            identification = IdentificationUser(**(data.model_dump()), id_identification=await UtilityFunction.get_id(models))
+            identification = IdentificationUser(**(data.model_dump()),
+                                                id_identification=await UtilityFunction.get_id(models),
+                                                password=password)
             session.add(identification)
             await session.flush()
             await session.commit()
@@ -1124,7 +1133,6 @@ class DataLoads:
                 "id_people": identification.id_people,
                 "id_tg": identification.id_tg,
                 "login": identification.login,
-                "password": identification.password,
                 "id_role": identification.id_role
             }
 

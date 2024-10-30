@@ -2,8 +2,8 @@ from time import timezone
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy import Float, String, ForeignKey, MetaData, Date, DateTime, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped
+from sqlalchemy import Float, String, ForeignKey, MetaData, Date, DateTime, UniqueConstraint, create_engine
+from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped, sessionmaker
 from sqlalchemy.sql import func
 from datetime import datetime, date
 
@@ -12,13 +12,15 @@ from typing_extensions import Annotated
 from config import PG_DB, REAL_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT
 
 # connection for the test base
-#PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+SYNC_PG_DSN = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
 # connection for the real base
 PG_DSN = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{REAL_DB}"
 
 engine = create_async_engine(PG_DSN, echo=True)
+sync_engine = create_engine(SYNC_PG_DSN)
 
 Session = async_sessionmaker(engine, expire_on_commit=False)
+Session_sync = sessionmaker(bind=sync_engine)
 
 my_metadata = MetaData()
 

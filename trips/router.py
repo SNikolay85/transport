@@ -5,10 +5,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, Body, HTTPException
 from fastapi_cache.decorator import cache
 
-from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd
-from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
+from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd, RoleAdd
+from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd, IdentificationAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, WhereDriveUpdate, PeopleUpdate
-from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate, DriverDate
+from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate
+from trips.schema import IdentificationUpdate, RoleUpdate, DriverDate
 
 from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch, Delete
 
@@ -25,6 +26,8 @@ router_driver = APIRouter(prefix='/driver', tags=['Driver'])
 router_passenger = APIRouter(prefix='/passenger', tags=['Passenger'])
 router_other_route = APIRouter(prefix='/other_route', tags=['OtherRoute'])
 router_refueling = APIRouter(prefix='/refueling', tags=['Refueling'])
+router_identification = APIRouter(prefix='/identification', tags=['Identification'])
+router_role = APIRouter(prefix='/role', tags=['Role'])
 
 
 # @router_point.post('/')
@@ -478,3 +481,60 @@ async def get_refueling(date_start, date_finish):
     count_refueling = await DataGet.count_refueling_to_date(date_start, date_finish)
     return {'refuelings': count_refueling}
 
+
+@router_identification.post('/')
+async def add_identification(identification: Annotated[IdentificationAdd, Depends()]):
+    identification_data = await DataLoads.add_identification(identification)
+    return {"message": f"{identification_data['id_tg']}, добавлено в базу"}
+
+
+@router_identification.patch('/{id_identification}')
+async def change_identification(id_identification: int, identification: Annotated[IdentificationUpdate, Depends()]):
+    if identification.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    identification_data = await DataPatch.update_identification(id_identification, identification)
+    return identification_data
+
+
+@router_identification.get('/')
+async def get_identification():
+    identifications = await DataGet.find_all_identification()
+    return {'identifications': identifications}
+
+
+@router_identification.delete('/{id_identification}')
+async def del_identification(id_identification: int):
+    identification = await Delete.del_identification(id_identification)
+    if type(identification) is str:
+        return identification
+    else:
+        return {'message': f'{identification.id_tg} удалено'}
+
+
+@router_role.post('/')
+async def add_role(role: Annotated[RoleAdd, Depends()]):
+    role_data = await DataLoads.add_role(role)
+    return {"message": f"{role_data['name_role']}, добавлено в базу"}
+
+
+@router_role.patch('/{id_role}')
+async def change_role(id_role: int, role: Annotated[RoleUpdate, Depends()]):
+    if role.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    role_data = await DataPatch.update_role(id_role, role)
+    return role_data
+
+
+@router_role.get('/')
+async def get_role():
+    roles = await DataGet.find_all_role()
+    return {'roles': roles}
+
+
+@router_role.delete('/{id_role}')
+async def del_role(id_role: int):
+    role = await Delete.del_role(id_role)
+    if type(role) is str:
+        return role
+    else:
+        return {'message': f'{role.name_role} удалено'}

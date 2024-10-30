@@ -31,6 +31,7 @@ position_fk = Annotated[int, mapped_column(ForeignKey('position.id_position', on
 people_fk = Annotated[int, mapped_column(ForeignKey('people.id_people', ondelete="CASCADE"))]
 organization_fk = Annotated[int, mapped_column(ForeignKey('organization.id_organization', ondelete="CASCADE"))]
 driver_fk = Annotated[int, mapped_column(ForeignKey('driver.id_driver', ondelete="CASCADE"))]
+role_fk = Annotated[int, mapped_column(ForeignKey('role.id_role', ondelete="CASCADE"))]
 str100 = Annotated[str, 100]
 str20 = Annotated[str, 20]
 str50 = Annotated[str, 50]
@@ -206,8 +207,45 @@ class People(Base):
     drivers: Mapped[list['Driver']] = relationship(back_populates='people')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='people')
     refuelings: Mapped[list['Refueling']] = relationship(back_populates='people')
+    identification: Mapped['IdentificationUser'] = relationship(back_populates='people')
 
     repr_cols_num = 7
+    repr_cols = tuple()
+
+
+class IdentificationUser(Base):
+    __tablename__ = 'identification'
+
+    id_identification: Mapped[intpk]
+    id_people: Mapped[people_fk]
+    id_tg: Mapped[Optional[str50]] = mapped_column(unique=True)
+    login: Mapped[Optional[str50]] = mapped_column(unique=True)
+    password: Mapped[Optional[str50]] = mapped_column(unique=True)
+    id_role: Mapped[role_fk]
+    __table_args__ = (UniqueConstraint('id_people', 'id_tg', 'login', 'password', 'id_role', name='identification_uc'),)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    people: Mapped['People'] = relationship(back_populates='identification')
+    role: Mapped['Role'] = relationship(back_populates='identifications')
+
+    repr_cols_num = 6
+    repr_cols = tuple()
+
+
+class Role(Base):
+    __tablename__ = 'role'
+
+    id_role: Mapped[intpk]
+    name_role: Mapped[str50] = mapped_column(unique=True)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    identifications: Mapped[list['IdentificationUser']] = relationship(back_populates='role')
+
+    repr_cols_num = 2
     repr_cols = tuple()
 
 

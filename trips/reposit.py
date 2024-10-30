@@ -13,20 +13,23 @@ from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, and_, update, delete
 from sqlalchemy.orm import selectinload, joinedload
 
-from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
-from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute
+from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization, Role
+from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, IdentificationUser
 
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
-from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd
+from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd, IdentificationAdd, RoleAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
 from trips.schema import CarUpdate, PositionUpdate, DriverUpdate, CarFuelUpdate, OtherRouteUpdate, PassengerUpdate
+from trips.schema import RoleUpdate, IdentificationUpdate
 
 from trips.schema import FullPoint, DriverDate, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
+from trips.schema import FullRole, FullIdentification
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
 from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
 from trips.schema import FullPassengerRe, FullPassengerDriverRe, FullOtherRouteDriverRe
+from trips.schema import FullRoleRe, FullIdentificationRe
 
 import requests
 from geopy.geocoders import Nominatim
@@ -474,10 +477,10 @@ class DataPatch:
             update_point = result.fetchone()
             await session.commit()
             if update_point is not None:
-                return (f'Изменения для id {update_point[0]}: '
-                        f'Название - {update_point[1]}, '
-                        f'Стоимость - {update_point[2]}, '
-                        f'Координаты - [{update_point[3]}: {update_point[4]}]')
+                return (f'Изменения для id {update_point[0]}: ',
+                        f'Название - {update_point[1]} ',
+                        f'Стоимость - {update_point[2]} ',
+                        f'Координаты - [{update_point[3]}: {update_point[4]}] ')
 
     @classmethod
     async def update_organization(cls, id_organization: int, data: OrganizationUpdate):
@@ -493,8 +496,8 @@ class DataPatch:
             await session.commit()
             if update_organization is not None:
                 return (f'Изменения для id {update_organization[0]}: '
-                        f'Название - {update_organization[1]}, '
-                        f'id адреса - {update_organization[2]}')
+                        f'Название - {update_organization[1]} ',
+                        f'id адреса - {update_organization[2]} ')
 
     @classmethod
     async def update_route(cls, id_route: int, data: RouteUpdate):
@@ -546,6 +549,47 @@ class DataPatch:
             if update_people is not None:
                 return (f'Изменения для id {update_people[0]}: ',
                         f'Новое значение: {update_people}')
+
+    @classmethod
+    async def update_identification(cls, id_identification: int, data: IdentificationUpdate):
+        async with Session() as session:
+            query = (
+                update(IdentificationUser)
+                .where(IdentificationUser.id_identification == id_identification)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(IdentificationUser.id_identification,
+                           IdentificationUser.id_people,
+                           IdentificationUser.id_tg,
+                           IdentificationUser.login,
+                           IdentificationUser.password,
+                           IdentificationUser.id_role)
+            )
+            result = await session.execute(query)
+            update_identification = result.fetchone()
+            await session.commit()
+            if update_identification is not None:
+                return (f'Изменения для id {update_identification[0]}: ',
+                        f'id сотрудника - {update_identification[1]} ',
+                        f'id сотрудника в телеграм - {update_identification[2]} ',
+                        f'логин - {update_identification[3]} ',
+                        f'пароль - {update_identification[4]} ',
+                        f'доступ - {update_identification[5]} ')
+
+    @classmethod
+    async def update_role(cls, id_role: int, data: RoleUpdate):
+        async with Session() as session:
+            query = (
+                update(Role)
+                .where(Role.id_role == id_role)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(Role.id_role, Role.name_role)
+            )
+            result = await session.execute(query)
+            update_role = result.fetchone()
+            await session.commit()
+            if update_role is not None:
+                return (f'Изменения для id {update_role[0]}: ',
+                        f'название - {update_role[1]} ')
 
     @classmethod
     async def update_wd(cls, id_wd: int, data: WhereDriveUpdate):
@@ -800,6 +844,40 @@ class Delete:
                 return "Данной записи нет в базе"
 
     @classmethod
+    async def del_identification(cls, id_identification):
+        async with Session() as session:
+            identification = select(IdentificationUser).filter(IdentificationUser.id_identification == id_identification)
+            try:
+                result = await session.execute(identification)
+                models = result.unique().scalars().one()
+                identification = (
+                    delete(IdentificationUser)
+                    .where(IdentificationUser.id_identification == id_identification)
+                )
+                await session.execute(identification)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_role(cls, id_role):
+        async with Session() as session:
+            role = select(Role).filter(Role.id_role == id_role)
+            try:
+                result = await session.execute(role)
+                models = result.unique().scalars().one()
+                role = (
+                    delete(Role)
+                    .where(Role.id_role == id_role)
+                )
+                await session.execute(role)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
     async def del_organization(cls, id_organization):
         async with Session() as session:
             organization = select(Organization).filter(Organization.id_organization == id_organization)
@@ -1029,6 +1107,40 @@ class DataLoads:
                 "id_position": people.id_position,
                 "driving_licence": people.driving_licence,
                 "ppr_card": people.ppr_card
+            }
+
+    @classmethod
+    async def add_identification(cls, data: IdentificationAdd) -> dict:
+        async with Session() as session:
+            query = select(IdentificationUser.id_identification)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            identification = IdentificationUser(**(data.model_dump()), id_identification=await UtilityFunction.get_id(models))
+            session.add(identification)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_identification": identification.id_identification,
+                "id_people": identification.id_people,
+                "id_tg": identification.id_tg,
+                "login": identification.login,
+                "password": identification.password,
+                "id_role": identification.id_role
+            }
+
+    @classmethod
+    async def add_role(cls, data: RoleAdd) -> dict:
+        async with Session() as session:
+            query = select(Role.id_role)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            role = Role(**(data.model_dump()), id_role=await UtilityFunction.get_id(models))
+            session.add(role)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_role": role.id_role,
+                "name_role": role.name_role
             }
 
     @classmethod
@@ -1283,6 +1395,31 @@ class DataGet:
             result = await session.execute(query)
             models = result.unique().scalars().all()
             dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
+
+    @staticmethod
+    async def find_all_identification():
+        async with Session() as session:
+            query = (
+                select(IdentificationUser)
+                .options(joinedload(IdentificationUser.people))
+                .options(joinedload(IdentificationUser.role))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            dto = [FullIdentificationRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
+
+    @staticmethod
+    async def find_all_role():
+        async with Session() as session:
+            query = (
+                select(Role)
+                .options(selectinload(Role.identifications))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            dto = [FullRoleRe.model_validate(row, from_attributes=True) for row in models]
             return dto
 
     @staticmethod

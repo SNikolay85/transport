@@ -3,8 +3,8 @@ import asyncio
 import os
 import json
 
-from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization
-from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute
+from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization, IdentificationUser
+from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, Role
 
 current = os.getcwd()
 file_name_base = '../real_download_data.json'
@@ -46,6 +46,26 @@ async def download_all():
         dict_temp = {'model': 'fuel', 'fields': {}}
         dict_temp['fields']['id_fuel'] = i.id_fuel
         dict_temp['fields']['name'] = i.name_fuel
+        dict_temp['fields']['created_on'] = str(i.created_on)
+        dict_temp['fields']['updated_on'] = str(i.updated_on)
+        all_data.append(dict_temp)
+
+    for i in await query_data(Role):
+        dict_temp = {'model': 'role', 'fields': {}}
+        dict_temp['fields']['id_role'] = i.id_role
+        dict_temp['fields']['name_role'] = i.name_role
+        dict_temp['fields']['created_on'] = str(i.created_on)
+        dict_temp['fields']['updated_on'] = str(i.updated_on)
+        all_data.append(dict_temp)
+
+    for i in await query_data(IdentificationUser):
+        dict_temp = {'model': 'identification', 'fields': {}}
+        dict_temp['fields']['id_identification'] = i.id_identification
+        dict_temp['fields']['id_people'] = i.id_people
+        dict_temp['fields']['id_tg'] = i.id_tg
+        dict_temp['fields']['login'] = i.login
+        dict_temp['fields']['password'] = i.password
+        dict_temp['fields']['id_role'] = i.id_role
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)

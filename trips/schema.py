@@ -159,6 +159,51 @@ class FullPeRe(FullPeople):
 
 
 # --------------------------
+# schemes for model Identification
+class IdentificationAdd(BaseModel):
+    id_people: int
+    id_tg: str
+    login: str
+    password: str
+    id_role: int
+
+
+class IdentificationUpdate(BaseModel):
+    id_people: Optional[int] = None
+    id_tg: Optional[str] = None
+    login: Optional[str] = None
+    password: Optional[str] = None
+    id_role: Optional[int] = None
+
+
+class FullIdentification(IdentificationAdd):
+    id_identification: int
+
+
+class FullIdentificationRe(FullIdentification):
+    people: 'FullPeople'
+    role: 'FullRole'
+
+
+# --------------------------
+# schemes for model Role
+class RoleAdd(BaseModel):
+    name_role: str
+
+
+class RoleUpdate(BaseModel):
+    name_role: Optional[str] = None
+
+
+class FullRole(RoleAdd):
+    id_role: int
+
+
+class FullRoleRe(FullRole):
+    identifications: list['FullIdentification']
+
+
+# --------------------------
 # schemes for model Organization
 class OrganizationAdd(BaseModel):
     name_organization: str

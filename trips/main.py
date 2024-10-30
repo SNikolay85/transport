@@ -12,7 +12,7 @@ from trips.router import router_point as point, router_route as route, router_ca
 from trips.router import router_car_fuel as car_fuel, router_people as people, router_position as position
 from trips.router import router_driver as driver, router_passenger as passenger, router_refueling as refueling
 from trips.router import router_fuel as fuel, router_wd as wd, router_organization as organization
-from trips.router import router_other_route as other_route
+from trips.router import router_other_route as other_route, router_role as role, router_identification as identification
 
 from trips.pages.router import router_page
 #SALT=djjfjj53jjd@djdjd
@@ -39,6 +39,8 @@ app_route.include_router(wd)
 app_route.include_router(car_fuel)
 app_route.include_router(position)
 app_route.include_router(people)
+app_route.include_router(role)
+app_route.include_router(identification)
 app_route.include_router(organization)
 app_route.include_router(driver)
 app_route.include_router(passenger)

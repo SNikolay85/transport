@@ -4,8 +4,8 @@ from datetime import datetime
 import os
 import json
 
-from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel
-from trips.models import WhereDrive, Refueling, Organization, OtherRoute
+from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel, Role
+from trips.models import WhereDrive, Refueling, Organization, OtherRoute, IdentificationUser
 from trips.models import create_tables, delete_tables, Session
 
 
@@ -179,6 +179,28 @@ async def load_db(data_trans):
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )
             session.add(refueling)
+            await session.commit()
+        elif record['model'] == 'role':
+            role = Role(
+                id_role=record['fields']['id_role'],
+                name_role=record['fields']['name_role'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
+            session.add(role)
+            await session.commit()
+        elif record['model'] == 'identification':
+            identification = IdentificationUser(
+                id_identification=record['fields']['id_identification'],
+                id_people=record['fields']['id_people'],
+                id_tg=record['fields']['id_tg'],
+                login=record['fields']['login'],
+                password=record['fields']['password'],
+                id_role=record['fields']['id_role'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
+            session.add(identification)
             await session.commit()
 
     await asyncio.shield(session.close())

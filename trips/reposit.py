@@ -48,10 +48,10 @@ class UtilityFunction:
     SALT = SALT
 
     @classmethod
-    def get_identification(cls):
-        with Session_sync() as session:
+    async def get_identification(cls):
+        async with Session() as session:
             query = select(IdentificationUser.id_tg)
-            result = session.execute(query)
+            result = await session.execute(query)
             id_tg = result.unique().scalars().all()
             return id_tg
 
@@ -113,17 +113,17 @@ class UtilityFunction:
             return id_people
 
     @staticmethod
-    def id_people(string: str) -> int:
+    async def id_people(string: str) -> int:
         pattern = r'\A[а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+ [а-яА-ЯёЁ]+\Z'
         result = re.search(pattern, string)
         if result is not None:
             fio = result[0].split(sep=' ')
-            with Session_sync() as session:
+            async with Session() as session:
                 query = select(People.id_people).filter(and_(
                     People.first_name == fio[1].capitalize(),
                     People.last_name == fio[0].capitalize(),
                     People.patronymic == fio[2].capitalize()))
-                id_people = (session.execute(query)).unique().scalars().first()
+                id_people = (await session.execute(query)).unique().scalars().first()
                 if id_people is not None:
                     return id_people
                 return 0
@@ -242,10 +242,10 @@ class UtilityFunction:
             return id_point_factory
 
     @staticmethod
-    def get_id_role() -> int:
-        with Session_sync() as session:
+    async def get_id_role() -> int:
+        async with Session() as session:
             query = select(Role.id_role).filter(Role.name_role == 'worker')
-            result = session.execute(query)
+            result = await session.execute(query)
             id_role = result.unique().scalars().first()
             return id_role
 

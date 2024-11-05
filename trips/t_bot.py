@@ -27,17 +27,18 @@ bot.delete_webhook()
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    # loop = asyncio.get_event_loop()
-    # taskA = loop.create_task(UtilityFunction.get_identification())
-    if message.from_user.id in asyncio.run(UtilityFunction.get_identification()):
-        button_fuel = types.KeyboardButton(text='Баланс топлива')
-        button_cost = types.KeyboardButton(text='Сумма заездов')
-        markup.add(button_fuel).row(button_cost)
+    if str(message.from_user.id) in asyncio.run(UtilityFunction.get_identification()):
+        button_fuel_cost = types.KeyboardButton(text='Баланс топлива и заезды')
+        button_route = types.KeyboardButton(text='Список маршрутов')
+        markup.add(button_fuel_cost).row(button_route)
         bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} Вы зарегестрированый пользователь!',
                          reply_markup=markup)
     else:
-        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)')
-        bot.register_next_step_handler(message, registration)
+        button_registration = types.KeyboardButton(text='Регистрация')
+        markup.add(button_registration)
+        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для просмотра информации необходимо зарегестрироваться.',  reply_markup=markup)  #для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)')
+
+        #bot.register_next_step_handler(message, registration)
 
 
 def registration(message):
@@ -46,40 +47,46 @@ def registration(message):
         loop = asyncio.get_event_loop()
         fio = message.text.strip()
         id_people = loop.create_task(UtilityFunction.id_people(fio))
+        id_role = loop.create_task(UtilityFunction.get_id_role())
+        loop.run_until_complete(asyncio.wait([id_people, id_role]))
         if id_people == 0:
             answer = f'Вас нет в базе'
         elif id_people == -1:
             answer = f'Неправельно ввели данные'
         else:
-            id_role = loop.create_task(UtilityFunction.get_id_role())
-            data_fg = DataLoads.add_identification(data=IdentificationAdd(id_tg=str(message.from_user.id),
-                                                                          id_people=id_people,
-                                                                          id_role=id_role))
-            loop.run_until_complete(asyncio.wait([id_people, id_role, data_fg]))
+            #id_role = loop.create_task(UtilityFunction.get_id_role())
+            # data_fg = asyncio.run(DataLoads.add_identification(data=IdentificationAdd(id_tg=str(message.from_user.id),
+            #                                                                           id_people=id_people,
+            #                                                                           id_role=id_role)))
+            #loop.run_until_complete(asyncio.wait([id_people, id_role, data_fg]))
             #users[id_people] = message.from_user.id
             answer = f'Успешно зарегестрировались'
         bot.send_message(message.chat.id, answer)
-        button_fuel = types.KeyboardButton(text='Баланс топлива')
-        button_cost = types.KeyboardButton(text='Сумма заездов')
-        markup.row(button_fuel, button_cost)
+        button_fuel_cost = types.KeyboardButton(text='Баланс топлива и заезды')
+        button_route = types.KeyboardButton(text='Список маршрутов')
+        markup.row(button_fuel_cost, button_route)
         bot.send_message(message.chat.id,
                          text='Получить информацию',
                          reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'Введите данные')
 
-# def on_click(message):
-#     if message.text == 'Баланс топлива':
-#         fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
-#         bot.send_message(message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}',
-#                          parse_mode='html')
+
+@bot.message_handler(content_types=['text'])
+def get_text_messages(message):
+    if message.text.lower() == 'баланс топлива и заезды':
+        fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=11)))
+        bot.send_message(message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}',
+                         parse_mode='html')
+    elif message.text.lower() == 'список маршрутов':
+        bot.send_message(message.chat.id, 'Routes will be here')
 
 
-# @bot.callback_query_handler(func=lambda callback: True)
-# def response(callback):
-#     if callback.data == 'fuel':
-#         fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
-#         bot.send_message(callback.message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}', parse_mode='html')
+@bot.callback_query_handler(func=lambda callback: True)
+def response(callback):
+    if callback.data == 'on_click':
+        fg = asyncio.run(UtilityFunction.get_count_gas(1, data=DriverDate(month_trip=10)))
+        bot.send_message(callback.message.chat.id, f'<b>{fg[0]}</b> \n{fg[1]}\n{fg[2]}\n{fg[3]}\n{fg[4]}', parse_mode='html')
 #     elif callback.data == 'registration':
 #         users = {}
 #         first_message = f'Для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)'

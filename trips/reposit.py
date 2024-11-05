@@ -1117,14 +1117,13 @@ class DataLoads:
 
     @classmethod
     async def add_identification(cls, data: IdentificationAdd) -> dict:
-        password = UtilityFunction.hash_password(str(data.password))
+        data.password = UtilityFunction.hash_password(str(data.password))
         async with Session() as session:
             query = select(IdentificationUser.id_identification)
             result = await session.execute(query)
             models = result.unique().scalars().all()
             identification = IdentificationUser(**(data.model_dump()),
-                                                id_identification=await UtilityFunction.get_id(models),
-                                                password=password)
+                                                id_identification=await UtilityFunction.get_id(models))
             session.add(identification)
             await session.flush()
             await session.commit()

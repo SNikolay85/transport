@@ -22,22 +22,29 @@ bot.delete_webhook()
 #         bot.send_message(message.chat.id, message)
 #     else:
 #         bot.send_message(message.from_user.id, "Я тебя не понимаю. Напиши /help.")
+#
 
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(content_types=['text'])
 def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    if str(message.from_user.id) in asyncio.run(UtilityFunction.get_identification()):
-        button_fuel_cost = types.KeyboardButton(text='Баланс топлива и заезды')
-        button_route = types.KeyboardButton(text='Список маршрутов')
-        markup.add(button_fuel_cost).row(button_route)
-        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} Вы зарегестрированый пользователь!',
-                         reply_markup=markup)
+    if message.text == 'Начать':
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+        if str(message.from_user.id) in asyncio.run(UtilityFunction.get_identification()):
+            button_fuel_cost = types.KeyboardButton(text='Баланс топлива и заезды')
+            button_route = types.KeyboardButton(text='Список маршрутов')
+            markup.add(button_fuel_cost).row(button_route)
+            bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} Вы зарегестрированый пользователь!',
+                             reply_markup=markup)
+        else:
+            button_registration = types.KeyboardButton(text='Регистрация')
+            markup.add(button_registration)
+            bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для просмотра информации необходимо зарегестрироваться.',  reply_markup=markup)  #для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)')
     else:
-        button_registration = types.KeyboardButton(text='Регистрация')
-        markup.add(button_registration)
-        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name}, для просмотра информации необходимо зарегестрироваться.',  reply_markup=markup)  #для регистрации напиши ФИО полностью (н-р: Иванов Иван Иванович)')
-
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+        button_start = types.KeyboardButton(text='Начать')
+        markup.add(button_start)
+        bot.send_message(message.chat.id, text=f'Привет {message.from_user.first_name} нажми Начать!',
+                         reply_markup=markup)
         #bot.register_next_step_handler(message, registration)
 
 

@@ -449,14 +449,19 @@ class UtilityFunction:
         balance_all = spent_round_all - all_refueling
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
+        trip_list = [
+            {'Дата поездки': str(i['date_trip']),
+             'Маршрут на работу': i['trip_forward'],
+             'Расстояние на работу': f"{i['distance_forward']} км",
+             'Маршрут с работы': i['trip_away'],
+             'Расстояние с работы': f"{i['distance_away']} км"} for i in list_trip_month]
 
         return (f'Данные за {month[data.month_trip]}',
                 f'Расстояние {distance_month}',
                 f'Заезды {sum(cost_passenger) + sum(cost_other_route) + sum(cost_worker)}',
                 f'Остаток текущий {balance_all}',
-                f'Остаток на начало месяца {result}')
+                f'Остаток на начало месяца {result}'), trip_list
                 # f'Заправки {refueling_month}', list_refueling_month,
-                #f'Поездки'), list_trip_month
 
 
 class DataPatch:

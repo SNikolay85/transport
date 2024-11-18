@@ -58,18 +58,6 @@ async def download_all():
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)
 
-    for i in await query_data(IdentificationUser):
-        dict_temp = {'model': 'identification', 'fields': {}}
-        dict_temp['fields']['id_identification'] = i.id_identification
-        dict_temp['fields']['id_people'] = i.id_people
-        dict_temp['fields']['id_tg'] = i.id_tg
-        dict_temp['fields']['login'] = i.login
-        dict_temp['fields']['password'] = i.password
-        dict_temp['fields']['id_role'] = i.id_role
-        dict_temp['fields']['created_on'] = str(i.created_on)
-        dict_temp['fields']['updated_on'] = str(i.updated_on)
-        all_data.append(dict_temp)
-
     for i in await query_data(WhereDrive):
         dict_temp = {'model': 'where_drive', 'fields': {}}
         dict_temp['fields']['id_wd'] = i.id_wd
@@ -168,6 +156,18 @@ async def download_all():
         dict_temp['fields']['people'] = i.id_people
         dict_temp['fields']['quantity'] = float(i.quantity)
         dict_temp['fields']['date'] = str(i.date_refueling)
+        dict_temp['fields']['created_on'] = str(i.created_on)
+        dict_temp['fields']['updated_on'] = str(i.updated_on)
+        all_data.append(dict_temp)
+
+    for i in await query_data(IdentificationUser):
+        dict_temp = {'model': 'identification', 'fields': {}}
+        dict_temp['fields']['id_identification'] = i.id_identification
+        dict_temp['fields']['id_people'] = i.id_people
+        dict_temp['fields']['id_tg'] = i.id_tg
+        dict_temp['fields']['login'] = i.login
+        dict_temp['fields']['password'] = i.password
+        dict_temp['fields']['id_role'] = i.id_role
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)

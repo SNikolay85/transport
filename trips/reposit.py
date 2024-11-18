@@ -381,6 +381,25 @@ class UtilityFunction:
         return answer
 
     @classmethod
+    async def cost_route(cls, marker, point_of_factory, route: list, all_route, driver):
+        if marker == 1:
+            if len(route) != 0 and len(route[:route.index(point_of_factory) + 1]) > 2:
+                return await UtilityFunction.get_sum_cost(route[:route.index(point_of_factory)], all_route, driver)
+        elif marker == 2:
+            if len(route) != 0 and len(route[route.index(point_of_factory):]) > 1:
+                return await UtilityFunction.get_sum_cost(route[route.index(point_of_factory):], all_route, driver)
+        elif marker == 3:
+            if len(route) != 0 and len(route[route.index(point_of_factory):]) > 2:
+                rpa = route[route.index(point_of_factory) + 1:]
+                rpa.reverse()
+                return await UtilityFunction.get_sum_cost(rpa, all_route, driver)
+        elif marker == 4:
+            if len(route) != 0 and len(route[:route.index(point_of_factory) + 1]) > 1:
+                roa = route[:route.index(point_of_factory) + 1]
+                roa.reverse()
+                return await UtilityFunction.get_sum_cost(roa, all_route, driver)
+
+    @classmethod
     async def get_count_gas(cls, id_people: int, data: DriverDate):
         year_now, month_now = datetime.now().year, datetime.now().month
         all_period_start = date(year_now, 1, 1)
@@ -414,13 +433,21 @@ class UtilityFunction:
         point_of_factory = await UtilityFunction.get_id_point_factory()
 
         route_pas_fwd = list(map(lambda x: x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)],
-                                filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)+1]) > 2, list_trip_month)))
+                                 filter(lambda x: len(x['point_trip_forward']) != 0 and len(
+                                     x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory) + 1]) > 2,
+                                        list_trip_month)))
         route_or_fwd = list(map(lambda x: x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):],
-                             filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):]) > 1, list_trip_month)))
-        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory)+1:],
-                                 filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][x['point_trip_away'].index(point_of_factory):]) > 2, list_trip_month)))
-        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1],
-                                filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1]) > 1, list_trip_month)))
+                                filter(lambda x: len(x['point_trip_forward']) != 0 and len(
+                                    x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):]) > 1,
+                                       list_trip_month)))
+        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory) + 1:],
+                                  filter(lambda x: len(x['point_trip_away']) != 0 and len(
+                                      x['point_trip_away'][x['point_trip_away'].index(point_of_factory):]) > 2,
+                                         list_trip_month)))
+        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory) + 1],
+                                 filter(lambda x: len(x['point_trip_away']) != 0 and len(
+                                     x['point_trip_away'][:x['point_trip_away'].index(point_of_factory) + 1]) > 1,
+                                        list_trip_month)))
 
         list(map(lambda x: x.reverse(), route_pas_away))
         list(map(lambda x: x.reverse(), route_or_away))
@@ -449,12 +476,18 @@ class UtilityFunction:
         balance_all = spent_round_all - all_refueling
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
+
         trip_list = [
             {'Дата поездки': str(i['date_trip']),
              'Маршрут на работу': i['trip_forward'],
              'Расстояние на работу': f"{i['distance_forward']} км",
+             'Стоимость поездки на работу': await UtilityFunction.cost_route(1, point_of_factory, i['point_trip_forward'], all_route, driver),
+             #'Стоимость поездки другой маршрут вперед': await UtilityFunction.cost_route(2, point_of_factory, i['point_trip_forward'], all_route, driver),
+             'Доплата за дополнительный маршрут': await UtilityFunction.co_pay_worker(i['other_route'], point_of_factory, i['point_trip_forward'], i['point_trip_away'], all_route, driver),
+             #'Стоимость поездки другой маршрут назад': await UtilityFunction.cost_route(4, point_of_factory, i['point_trip_away'], all_route, driver),
              'Маршрут с работы': i['trip_away'],
-             'Расстояние с работы': f"{i['distance_away']} км"} for i in list_trip_month]
+             'Расстояние с работы': f"{i['distance_away']} км",
+             'Стоимость поездки с работы': await UtilityFunction.cost_route(3, point_of_factory, i['point_trip_away'], all_route, driver)} for i in list_trip_month]
 
         return (f'Данные за {month[data.month_trip]}',
                 f'Расстояние {distance_month}',
@@ -462,6 +495,18 @@ class UtilityFunction:
                 f'Остаток текущий {balance_all}',
                 f'Остаток на начало месяца {result}'), trip_list
                 # f'Заправки {refueling_month}', list_refueling_month,
+
+    @classmethod
+    async def co_pay_worker(cls, route_worker, point_of_factory, route_fwd, route_away, all_route, driver):
+        count = 0
+        if route_worker:
+            for i in route_worker:
+                if 'Сотрудник' in i.organization.name_organization:
+                    count += 100
+            count += await UtilityFunction.cost_route(2, point_of_factory, route_fwd, all_route, driver)
+            count += await UtilityFunction.cost_route(4, point_of_factory, route_away, all_route, driver)
+            return count
+        return 0
 
 
 class DataPatch:

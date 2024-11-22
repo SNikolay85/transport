@@ -5,8 +5,8 @@ import os
 import json
 
 from trips.models import Point, Route, Car, CarFuel, Position, People, Driver, Passenger, Fuel, Role
-from trips.models import WhereDrive, Refueling, Organization, OtherRoute, IdentificationUser
-from trips.models import create_tables, delete_tables, Session
+from trips.models import WhereDrive, Refueling, Organization, OtherRoute, IdentificationUser, PointPeople
+from trips.models import PointOrganization, create_tables, delete_tables, Session
 
 
 current = os.getcwd()
@@ -114,7 +114,6 @@ async def load_db(data_trans):
                 first_name=record['fields']['first_name'],
                 last_name=record['fields']['last_name'],
                 patronymic=record['fields']['patronymic'],
-                id_point=record['fields']['id_point'],
                 id_position=record['fields']['id_position'],
                 driving_licence=record['fields'].setdefault('driving_licence', None),
                 ppr_card=record['fields'].setdefault('ppr_card', None),
@@ -127,7 +126,6 @@ async def load_db(data_trans):
             organization = Organization(
                 id_organization=record['fields']['id_organization'],
                 name_organization=record['fields']['name_organization'],
-                id_point=record['fields']['id_point'],
                 created_on=format_date(date_time=record['fields']['created_on']),
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )
@@ -137,6 +135,7 @@ async def load_db(data_trans):
             drivers = Driver(
                 id_driver=record['fields']['id_driver'],
                 id_people=record['fields']['driver'],
+                id_point=record['fields']['point'],
                 date_trip=format_date(date=record['fields']['date']),
                 where_drive=record['fields']['where_drive'],
                 created_on=format_date(date_time=record['fields']['created_on']),
@@ -149,6 +148,7 @@ async def load_db(data_trans):
                 id_passenger=record['fields']['id_passenger'],
                 order=record['fields']['order'],
                 id_people=record['fields']['passenger'],
+                id_point=record['fields']['point'],
                 id_driver=record['fields']['driver'],
                 where_drive=record['fields']['WD'],
                 created_on=format_date(date_time=record['fields']['created_on']),
@@ -161,6 +161,7 @@ async def load_db(data_trans):
                 id_other_route=record['fields']['id_other_route'],
                 order=record['fields']['order'],
                 id_organization=record['fields']['organization'],
+                id_point=record['fields']['point'],
                 id_driver=record['fields']['driver'],
                 where_drive=record['fields']['WD'],
                 created_on=format_date(date_time=record['fields']['created_on']),
@@ -201,6 +202,26 @@ async def load_db(data_trans):
                 updated_on=format_date(date_time=record['fields']['updated_on'])
             )
             session.add(identification)
+            await session.commit()
+        elif record['model'] == 'point_people':
+            point_people = PointPeople(
+                id_point_people=record['fields']['id_point_people'],
+                id_point=record['fields']['point'],
+                id_people=record['fields']['people'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
+            session.add(point_people)
+            await session.commit()
+        elif record['model'] == 'point_organization':
+            point_organization = PointOrganization(
+                id_point_organization=record['fields']['id_point_organization'],
+                id_point=record['fields']['point'],
+                id_organization=record['fields']['organization'],
+                created_on=format_date(date_time=record['fields']['created_on']),
+                updated_on=format_date(date_time=record['fields']['updated_on'])
+            )
+            session.add(point_organization)
             await session.commit()
 
     await asyncio.shield(session.close())

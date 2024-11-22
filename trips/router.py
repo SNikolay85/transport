@@ -6,10 +6,11 @@ from fastapi import APIRouter, Depends, Form, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from trips.schema import PointAdd, RouteAdd, FuelAdd, CarAdd, CarFuelAdd, PositionAdd, OrganizationAdd, RoleAdd
-from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd, IdentificationAdd
+from trips.schema import WhereDriveAdd, PeopleAdd, DriverAdd, PassengerAdd, RefuelingAdd, OtherRouteAdd
+from trips.schema import IdentificationAdd, PointPeopleAdd, PointOrganizationAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, WhereDriveUpdate, PeopleUpdate
 from trips.schema import CarUpdate, PositionUpdate, CarFuelUpdate, DriverUpdate, PassengerUpdate, OtherRouteUpdate
-from trips.schema import IdentificationUpdate, RoleUpdate, DriverDate
+from trips.schema import IdentificationUpdate, RoleUpdate, DriverDate, PointPeopleUpdate, PointOrganizationUpdate
 
 from trips.reposit import DataLoads, DataGet, UtilityFunction, DataPatch, Delete
 
@@ -28,6 +29,8 @@ router_other_route = APIRouter(prefix='/other_route', tags=['OtherRoute'])
 router_refueling = APIRouter(prefix='/refueling', tags=['Refueling'])
 router_identification = APIRouter(prefix='/identification', tags=['Identification'])
 router_role = APIRouter(prefix='/role', tags=['Role'])
+router_point_people = APIRouter(prefix='/point_people', tags=['PointPeople'])
+router_point_organization = APIRouter(prefix='/point_organization', tags=['PointOrganization'])
 
 
 # @router_point.post('/')
@@ -193,7 +196,7 @@ async def get_car_fuel():
 
 
 @router_car_fuel.patch('/{id_car_fuel}')
-async def change_car(id_car_fuel: int, car_fuel: Annotated[CarFuelUpdate, Depends()]):
+async def change_car_fuel(id_car_fuel: int, car_fuel: Annotated[CarFuelUpdate, Depends()]):
     if car_fuel.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
     car_fuel_data = await DataPatch.update_car_fuel(id_car_fuel, car_fuel)
@@ -538,3 +541,61 @@ async def del_role(id_role: int):
         return role
     else:
         return {'message': f'{role.name_role} удалено'}
+
+
+@router_point_people.post('/')
+async def add_point_people(point_people: Annotated[PointPeopleAdd, Depends()]):
+    point_people_data = await DataLoads.add_point_people(point_people)
+    return point_people_data
+
+
+@router_point_people.get('/')
+async def get_point_people():
+    point_peoples = await DataGet.find_all_point_people()
+    return {'point_peoples': point_peoples}
+
+
+@router_point_people.patch('/{id_point_people}')
+async def change_point_people(id_point_people: int, point_people: Annotated[PointPeopleUpdate, Depends()]):
+    if point_people.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    point_people_data = await DataPatch.update_point_people(id_point_people, point_people)
+    return point_people_data
+
+
+@router_point_people.delete('/{id_point_people}')
+async def del_point_people(id_point_people: int):
+    point_people = await Delete.del_point_people(id_point_people)
+    if type(point_people) is str:
+        return point_people
+    else:
+        return {'message': f'{point_people.id_point} - {point_people.id_people} удалено'}
+
+
+@router_point_organization.post('/')
+async def add_point_organization(point_organization: Annotated[PointOrganizationAdd, Depends()]):
+    point_organization_data = await DataLoads.add_point_organization(point_organization)
+    return point_organization_data
+
+
+@router_point_organization.get('/')
+async def get_point_organization():
+    point_organizations = await DataGet.find_all_point_organization()
+    return {'point_organizations': point_organizations}
+
+
+@router_point_organization.patch('/{id_point_organization}')
+async def change_point_organization(id_point_organization: int, point_organization: Annotated[PointOrganizationUpdate, Depends()]):
+    if point_organization.model_dump(exclude_none=True) == {}:
+        raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
+    point_organization_data = await DataPatch.update_point_organization(id_point_organization, point_organization)
+    return point_organization_data
+
+
+@router_point_organization.delete('/{id_point_organization}')
+async def del_point_organization(id_point_organization: int):
+    point_organization = await Delete.del_point_organization(id_point_organization)
+    if type(point_organization) is str:
+        return point_organization
+    else:
+        return {'message': f'{point_organization.id_point} - {point_organization.id_organization} удалено'}

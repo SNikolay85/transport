@@ -9,7 +9,7 @@ import requests
 from pydantic import BaseModel
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select
+from sqlalchemy import String, ForeignKey, MetaData, Date, DateTime, TIMESTAMP, select, update
 from sqlalchemy.orm import DeclarativeBase, relationship, mapped_column, Mapped, selectinload, joinedload
 from sqlalchemy.sql import func
 from datetime import datetime, date
@@ -18,22 +18,19 @@ from datetime import datetime, date
 from typing_extensions import Annotated
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PPR
-from trips.models import Session, Point, Car, Driver, People, Position, Refueling, Fuel
+from trips.models import Session, Point, Car, Driver, Position, Refueling, Fuel
 from trips.reposit import UtilityFunction
 from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe, FullPeople, \
-    FullFuel, FullRefuelingRe, FullRefueling
+    FullFuel, FullRefuelingRe, FullRefueling, DriverUpdate
 
 from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
 #
 # date_now = datetime.strftime(datetime.now(), '%Y-%m-%d')
 # date_start = datetime.strftime(datetime.today().replace(day=1), '%Y-%m-%d')
-user = {1: 3434, 2: 3535}
-g = 343
-if g in user.values():
-    print('Yes')
-else:
-    print('No')
+
+
+
 
 
 app = FastAPI()
@@ -59,6 +56,26 @@ def replace_str(string):
     b = ['D' if i == 'T' else i for i in string]
     return print("".join(b))
 
+
+async def update_driver():
+    async with Session() as session:
+        data = DriverUpdate(id_point=1)
+        query = (
+            update(Driver)
+            .where(Driver.id_driver == 389)
+            .values(**(data.model_dump(exclude_none=True)))
+            .returning(Driver.id_driver, Driver.id_point)
+        )
+        result = await session.execute(query)
+        up_driver = result.fetchone()
+        await session.commit()
+        if up_driver is not None:
+            return (f'Изменения для id {up_driver[0]}: ',
+                    f'название - {up_driver[1]} ')
+
+
+
+asyncio.run(update_driver())
 #replace_str(a)
 
 # print(asyncio.run(Operation.id_factory()))

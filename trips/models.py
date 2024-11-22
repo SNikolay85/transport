@@ -79,14 +79,18 @@ class Point(Base):
                                                       foreign_keys='[Route.id_start_point]')
     finish_point: Mapped[list['Route']] = relationship(back_populates='point_finish',
                                                        foreign_keys='[Route.id_finish_point]')
-    peoples: Mapped[list['People']] = relationship(back_populates='point')
-    organizations: Mapped[list['Organization']] = relationship(back_populates='point')
 
-    peoples_driving_licence: Mapped[list['People']] = relationship(
-        back_populates='point',
-        primaryjoin='and_(Point.id_point == People.id_point, People.driving_licence != None)',
-        order_by='People.last_name.desc()'
-    )
+    drivers: Mapped[list['Driver']] = relationship(back_populates='point')
+    passengers: Mapped[list['Passenger']] = relationship(back_populates='point')
+    other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='point')
+    point_organizations: Mapped[list['PointOrganization']] = relationship(back_populates='point')
+    point_peoples: Mapped[list['PointPeople']] = relationship(back_populates='point')
+
+    # peoples_driving_licence: Mapped[list['People']] = relationship(
+    #     back_populates='point',
+    #     primaryjoin='and_(Point.id_point == People.id_point, People.driving_licence != None)',
+    #     order_by='People.last_name.desc()'
+    # )
 
     repr_cols_num = 5
     repr_cols = tuple()
@@ -194,25 +198,39 @@ class People(Base):
     first_name: Mapped[str50]
     last_name: Mapped[str50]
     patronymic: Mapped[str50]
-    id_point: Mapped[point_fk]
     id_position: Mapped[position_fk]
     driving_licence: Mapped[Optional[str50]] = mapped_column(unique=True)
     ppr_card: Mapped[Optional[str]] = mapped_column(unique=True)
-    __table_args__ = (UniqueConstraint('first_name', 'last_name', 'patronymic', 'id_point', 'id_position', name='people_uc'),)
+    __table_args__ = (UniqueConstraint('first_name', 'last_name', 'patronymic', 'id_position', name='people_uc'),)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
-    point: Mapped['Point'] = relationship(back_populates='peoples')
     position: Mapped['Position'] = relationship(back_populates='peoples')
     cars: Mapped[list['Car']] = relationship(back_populates='people')
     drivers: Mapped[list['Driver']] = relationship(back_populates='people')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='people')
     refuelings: Mapped[list['Refueling']] = relationship(back_populates='people')
     identification: Mapped['IdentificationUser'] = relationship(back_populates='people')
+    point_peoples: Mapped[list['PointPeople']] = relationship(back_populates='people')
 
     repr_cols_num = 7
     repr_cols = tuple()
+
+
+class PointPeople(Base):
+    __tablename__ = 'point_people'
+
+    id_point_people: Mapped[intpk]
+    id_point: Mapped[point_fk]
+    id_people: Mapped[people_fk]
+    __table_args__ = (UniqueConstraint('id_point', 'id_people', name='point_people_uc'),)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    point: Mapped['Point'] = relationship(back_populates='point_peoples')
+    people: Mapped['People'] = relationship(back_populates='point_peoples')
 
 
 class IdentificationUser(Base):
@@ -255,18 +273,28 @@ class Organization(Base):
     __tablename__ = 'organization'
 
     id_organization: Mapped[intpk]
-    name_organization: Mapped[str50]
-    id_point: Mapped[point_fk]
-    __table_args__ = (UniqueConstraint('name_organization', 'id_point', name='organization_uc'),)
+    name_organization: Mapped[str50] = mapped_column(unique=True)
 
     created_on: Mapped[created_on]
     updated_on: Mapped[updated_on]
 
-    point: Mapped['Point'] = relationship(back_populates='organizations')
+    point_organizations: Mapped[list['PointOrganization']] = relationship(back_populates='organization')
     other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='organization')
 
-    repr_cols_num = 3
-    repr_cols = tuple()
+
+class PointOrganization(Base):
+    __tablename__ = 'point_organization'
+
+    id_point_organization: Mapped[intpk]
+    id_point: Mapped[point_fk]
+    id_organization: Mapped[organization_fk]
+    __table_args__ = (UniqueConstraint('id_point', 'id_organization', name='point_organization_uc'),)
+
+    created_on: Mapped[created_on]
+    updated_on: Mapped[updated_on]
+
+    point: Mapped['Point'] = relationship(back_populates='point_organizations')
+    organization: Mapped['Organization'] = relationship(back_populates='point_organizations')
 
 
 class Driver(Base):
@@ -274,6 +302,7 @@ class Driver(Base):
 
     id_driver: Mapped[intpk]
     id_people: Mapped[people_fk]
+    id_point: Mapped[point_fk]
     date_trip: Mapped[date_trip]
     where_drive: Mapped[wd_fk]
     __table_args__ = (UniqueConstraint('id_driver', 'id_people', 'date_trip', name='people_date_uc'),)
@@ -282,11 +311,12 @@ class Driver(Base):
     updated_on: Mapped[updated_on]
 
     people: Mapped['People'] = relationship(back_populates='drivers')
+    point: Mapped['Point'] = relationship(back_populates='drivers')
     passengers: Mapped[list['Passenger']] = relationship(back_populates='driver')
     other_routes: Mapped[list['OtherRoute']] = relationship(back_populates='driver')
     wd: Mapped['WhereDrive'] = relationship(back_populates='drivers')
 
-    repr_cols_num = 4
+    repr_cols_num = 5
     repr_cols = tuple('created_on', )
 
 
@@ -296,6 +326,7 @@ class Passenger(Base):
     id_passenger: Mapped[intpk]
     order: Mapped[int]
     id_people: Mapped[people_fk]
+    id_point: Mapped[point_fk]
     id_driver: Mapped[driver_fk]
     where_drive: Mapped[wd_fk]
     __table_args__ = (UniqueConstraint('id_people', 'id_driver', 'where_drive', name='passenger_uc'),)
@@ -304,6 +335,7 @@ class Passenger(Base):
     updated_on: Mapped[updated_on]
 
     people: Mapped['People'] = relationship(back_populates='passengers')
+    point: Mapped['Point'] = relationship(back_populates='passengers')
     driver: Mapped['Driver'] = relationship(back_populates='passengers')
     wd: Mapped['WhereDrive'] = relationship(back_populates='passengers')
 
@@ -317,6 +349,7 @@ class OtherRoute(Base):
     id_other_route: Mapped[intpk]
     order: Mapped[int]
     id_organization: Mapped[organization_fk]
+    id_point: Mapped[point_fk]
     id_driver: Mapped[driver_fk]
     where_drive: Mapped[wd_fk]
     __table_args__ = (UniqueConstraint('id_organization', 'id_driver', 'where_drive', name='other_route_uc'),)
@@ -325,6 +358,7 @@ class OtherRoute(Base):
     updated_on: Mapped[updated_on]
 
     organization: Mapped['Organization'] = relationship(back_populates='other_routes')
+    point: Mapped['Point'] = relationship(back_populates='other_routes')
     driver: Mapped['Driver'] = relationship(back_populates='other_routes')
     wd: Mapped['WhereDrive'] = relationship(back_populates='other_routes')
 

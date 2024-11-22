@@ -4,10 +4,10 @@ import os
 import json
 
 from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Organization, IdentificationUser
-from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, Role
+from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, Role, PointPeople, PointOrganization
 
 current = os.getcwd()
-file_name_base = '../real_download_data.json'
+file_name_base = '../real_download_data1.json'
 full_path = os.path.join(current, file_name_base)
 
 
@@ -80,7 +80,6 @@ async def download_all():
         dict_temp['fields']['first_name'] = i.first_name
         dict_temp['fields']['last_name'] = i.last_name
         dict_temp['fields']['patronymic'] = i.patronymic
-        dict_temp['fields']['id_point'] = i.id_point
         dict_temp['fields']['id_position'] = i.id_position
         dict_temp['fields']['driving_licence'] = i.driving_licence
         dict_temp['fields']['ppr_card'] = i.ppr_card
@@ -92,7 +91,6 @@ async def download_all():
         dict_temp = {'model': 'organization', 'fields': {}}
         dict_temp['fields']['id_organization'] = i.id_organization
         dict_temp['fields']['name_organization'] = i.name_organization
-        dict_temp['fields']['id_point'] = i.id_point
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)
@@ -121,6 +119,7 @@ async def download_all():
         dict_temp = {'model': 'drivers', 'fields': {}}
         dict_temp['fields']['id_driver'] = i.id_driver
         dict_temp['fields']['driver'] = i.id_people
+        dict_temp['fields']['point'] = i.id_point
         dict_temp['fields']['date'] = str(i.date_trip)
         dict_temp['fields']['where_drive'] = i.where_drive
         dict_temp['fields']['created_on'] = str(i.created_on)
@@ -132,6 +131,7 @@ async def download_all():
         dict_temp['fields']['id_passenger'] = i.id_passenger
         dict_temp['fields']['order'] = i.order
         dict_temp['fields']['passenger'] = i.id_people
+        dict_temp['fields']['point'] = i.id_point
         dict_temp['fields']['driver'] = i.id_driver
         dict_temp['fields']['WD'] = i.where_drive
         dict_temp['fields']['created_on'] = str(i.created_on)
@@ -143,6 +143,7 @@ async def download_all():
         dict_temp['fields']['id_other_route'] = i.id_other_route
         dict_temp['fields']['order'] = i.order
         dict_temp['fields']['organization'] = i.id_organization
+        dict_temp['fields']['point'] = i.id_point
         dict_temp['fields']['driver'] = i.id_driver
         dict_temp['fields']['WD'] = i.where_drive
         dict_temp['fields']['created_on'] = str(i.created_on)
@@ -168,6 +169,24 @@ async def download_all():
         dict_temp['fields']['login'] = i.login
         dict_temp['fields']['password'] = i.password
         dict_temp['fields']['id_role'] = i.id_role
+        dict_temp['fields']['created_on'] = str(i.created_on)
+        dict_temp['fields']['updated_on'] = str(i.updated_on)
+        all_data.append(dict_temp)
+
+    for i in await query_data(PointPeople):
+        dict_temp = {'model': 'point_people', 'fields': {}}
+        dict_temp['fields']['id_point_people'] = i.id_point_people
+        dict_temp['fields']['point'] = i.id_point
+        dict_temp['fields']['people'] = i.id_people
+        dict_temp['fields']['created_on'] = str(i.created_on)
+        dict_temp['fields']['updated_on'] = str(i.updated_on)
+        all_data.append(dict_temp)
+
+    for i in await query_data(PointOrganization):
+        dict_temp = {'model': 'point_organization', 'fields': {}}
+        dict_temp['fields']['id_point_organization'] = i.id_point_organization
+        dict_temp['fields']['point'] = i.id_point
+        dict_temp['fields']['organization'] = i.id_organization
         dict_temp['fields']['created_on'] = str(i.created_on)
         dict_temp['fields']['updated_on'] = str(i.updated_on)
         all_data.append(dict_temp)

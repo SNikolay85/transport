@@ -10,6 +10,7 @@ router_page = APIRouter(
 
 templates = Jinja2Templates(directory='trips/templates')
 
+
 @router_page.get('/index')
 def get_base_index(request: Request):
     return templates.TemplateResponse('index.html', {'request': request})
@@ -24,9 +25,11 @@ def get_base_page(request: Request):
 def get_base_page(request: Request):
     return templates.TemplateResponse('index.html', {'request': request})
 
+
 @router_page.get('/trip')
 def get_trip_page(request: Request, points=Depends(DataGet.find_all_point)):
     return templates.TemplateResponse('trip.html', {'request': request, 'points': points})
+
 
 @router_page.get('/add_base')
 def get_add_base(request: Request, points=Depends(DataGet.all_point)):

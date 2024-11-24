@@ -50,7 +50,8 @@ class NamePoint(BaseModel):
 
 
 class FullPointRe(FullPoint):
-    peoples: list['FullPeople']
+    point_organizations: list['FullPointOrganization']
+    point_peoples: list['FullPointPeople']
 
 
 class PointDrivingLicenceRe(FullPoint):
@@ -121,7 +122,6 @@ class PeopleAdd(BaseModel):
     first_name: str
     last_name: str
     patronymic: str
-    id_point: int
     id_position: int
     driving_licence: Optional[str] = None
     ppr_card: Optional[str] = None
@@ -131,7 +131,6 @@ class PeopleUpdate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     patronymic: Optional[str] = None
-    id_point: Optional[int] = None
     id_position: Optional[int] = None
     driving_licence: Optional[str] = None
     ppr_card: Optional[str] = None
@@ -147,15 +146,29 @@ class FullPeople(PeopleAdd):
 
 
 class FullPeopleRe(FullPeople):
-    point: 'PointMin'
     position: 'FullPosition'
     cars: list['FullCar']
 
 
 class FullPeRe(FullPeople):
-    point: 'FullPoint'
     position: 'FullPosition'
     cars: list['FullCar']
+
+
+# --------------------------
+# schemes for model PointPeople
+class PointPeopleAdd(BaseModel):
+    id_point: int
+    id_people: int
+
+
+class PointPeopleUpdate(BaseModel):
+    id_point: Optional[int] = None
+    id_people: Optional[int] = None
+
+
+class FullPointPeople(PointPeopleAdd):
+    id_point_people: int
 
 
 # --------------------------
@@ -207,7 +220,6 @@ class FullRoleRe(FullRole):
 # schemes for model Organization
 class OrganizationAdd(BaseModel):
     name_organization: str
-    id_point: int
 
     # @field_validator('id_point')
     # async def validate(self, id_point):
@@ -218,7 +230,6 @@ class OrganizationAdd(BaseModel):
 
 class OrganizationUpdate(BaseModel):
     name_organization: Optional[str] = None
-    id_point: Optional[int] = None
 
     # @field_validator('name_organization', 'id_point')
     # @classmethod
@@ -238,8 +249,20 @@ class FullOrganization(OrganizationAdd):
     id_organization: int
 
 
-class FullOrganizationRe(FullOrganization):
-    point: 'PointMin'
+# --------------------------
+# schemes for model PointOrganization
+class PointOrganizationAdd(BaseModel):
+    id_point: int
+    id_organization: int
+
+
+class PointOrganizationUpdate(BaseModel):
+    id_point: Optional[int] = None
+    id_organization: Optional[int] = None
+
+
+class FullPointOrganization(PointOrganizationAdd):
+    id_point_organization: int
 
 
 # --------------------------
@@ -270,6 +293,7 @@ class FullCarRe(FullCar):
 # schemes for model Driver
 class DriverAdd(BaseModel):
     id_people: int
+    id_point: int
     date_trip: date
     where_drive: int
 
@@ -280,6 +304,7 @@ class DriverDate(BaseModel):
 
 class DriverUpdate(BaseModel):
     id_people: Optional[int] = None
+    id_point: Optional[int] = None
     date_trip: Optional[date] = None
     where_drive: Optional[int] = None
 
@@ -290,6 +315,7 @@ class FullDriver(DriverAdd):
 
 class FullDriverRe(FullDriver):
     people: 'FullPeople'
+    point: 'FullPoint'
     wd: 'FullWhereDrive'
 
 
@@ -298,6 +324,7 @@ class FullDriverRe(FullDriver):
 class PassengerAdd(BaseModel):
     order: int
     id_people: int
+    id_point: int
     id_driver: int
     where_drive: int
 
@@ -305,6 +332,7 @@ class PassengerAdd(BaseModel):
 class PassengerUpdate(BaseModel):
     order: Optional[int] = None
     id_people: Optional[int] = None
+    id_point: Optional[int] = None
     id_driver: Optional[int] = None
     where_drive: Optional[int] = None
 
@@ -315,12 +343,14 @@ class FullPassenger(PassengerAdd):
 
 class FullPassengerRe(FullPassenger):
     people: 'PeopleMin'
+    point: 'FullPoint'
     driver: 'FullDriver'
     wd: 'FullWhereDrive'
 
 
 class FullPassengerDriverRe(FullPassenger):
     people: 'FullPeople'
+    point: 'FullPoint'
     driver: 'FullDriver'
 
 
@@ -329,6 +359,7 @@ class FullPassengerDriverRe(FullPassenger):
 class OtherRouteAdd(BaseModel):
     order: int
     id_organization: int
+    id_point: int
     id_driver: int
     where_drive: int
 
@@ -336,6 +367,7 @@ class OtherRouteAdd(BaseModel):
 class OtherRouteUpdate(BaseModel):
     order: Optional[int] = None
     id_organization: Optional[int] = None
+    id_point: Optional[int] = None
     id_driver: Optional[int] = None
     where_drive: Optional[int] = None
 
@@ -346,12 +378,14 @@ class FullOtherRoute(OtherRouteAdd):
 
 class FullOtherRouteRe(FullOtherRoute):
     organization: 'FullOrganization'
+    point: 'FullPoint'
     driver: 'FullDriver'
     wd: 'FullWhereDrive'
 
 
 class FullOtherRouteDriverRe(FullOtherRoute):
     organization: 'FullOrganization'
+    point: 'FullPoint'
     driver: 'FullDriver'
 
 

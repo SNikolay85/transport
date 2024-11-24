@@ -15,19 +15,20 @@ from sqlalchemy.orm import selectinload, joinedload
 
 from trips.models import Point, Route, Fuel, Car, CarFuel, Position, Organization, Role
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, IdentificationUser
-from trips.models import Session_sync, Session
+from trips.models import PointPeople, PointOrganization, Session_sync, Session
 from trips.schema import PointAdd, DriverAdd, PassengerAdd, RouteAdd, CarAdd, CarFuelAdd, PositionAdd, PeopleAdd
-from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd, IdentificationAdd, RoleAdd
+from trips.schema import FuelAdd, WhereDriveAdd, RefuelingAdd, OrganizationAdd, OtherRouteAdd, IdentificationAdd
+from trips.schema import RoleAdd, PointPeopleAdd, PointOrganizationAdd
 from trips.schema import OrganizationUpdate, PointUpdate, RouteUpdate, FuelUpdate, PeopleUpdate, WhereDriveUpdate
 from trips.schema import CarUpdate, PositionUpdate, DriverUpdate, CarFuelUpdate, OtherRouteUpdate, PassengerUpdate
-from trips.schema import RoleUpdate, IdentificationUpdate
+from trips.schema import RoleUpdate, IdentificationUpdate, PointPeopleUpdate, PointOrganizationUpdate
 
 from trips.schema import FullPoint, DriverDate, FullRefueling, FullPeople, FullCar, FullFuel, FullCarFuel, FullRoute
 from trips.schema import FullWhereDrive, FullDriver, FullPassenger, FullPosition, FullOrganization, FullOtherRoute
-from trips.schema import FullRole, FullIdentification
+from trips.schema import FullRole, FullIdentification, FullPointPeople, FullPointOrganization
 
 from trips.schema import FullRouteRe, FullRefuelingRe, FullFuelRe, FullWhereDriveRe, FullPositionRe, FullOtherRouteRe
-from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint, FullOrganizationRe
+from trips.schema import FullCarRe, FullPeopleRe, FullPointRe, FullDriverRe, NamePoint
 from trips.schema import FullPassengerRe, FullPassengerDriverRe, FullOtherRouteDriverRe
 from trips.schema import FullRoleRe, FullIdentificationRe
 
@@ -225,10 +226,7 @@ class UtilityFunction:
     @staticmethod
     async def get_id_point_of_driver(id_driver: int) -> int:
         async with Session() as session:
-            query = select(Driver.id_people).filter(Driver.id_driver == id_driver)
-            result = await session.execute(query)
-            model = result.unique().scalars().first()
-            query = select(People.id_point).filter(People.id_people == model)
+            query = select(Driver.id_point).filter(Driver.id_driver == id_driver)
             result = await session.execute(query)
             id_point_driver = result.unique().scalars().first()
             return id_point_driver
@@ -265,17 +263,17 @@ class UtilityFunction:
     @staticmethod
     async def build_forward(driver, factory, dto_pas, dto_or) -> list:
         id_point_forward = [driver]
-        id_point_forward.extend([i.people.id_point for i in dto_pas if i.where_drive == 1])
+        id_point_forward.extend([i.point.id_point for i in dto_pas if i.where_drive == 1])
         id_point_forward.append(factory)
-        id_point_forward.extend([i.organization.id_point for i in dto_or if i.where_drive == 3])
+        id_point_forward.extend([i.point.id_point for i in dto_or if i.where_drive == 3])
         return id_point_forward
 
     @staticmethod
     async def build_away(driver, factory, dto_pas, dto_or) -> list:
         id_point_away = []
-        id_point_away.extend([i.organization.id_point for i in dto_or if i.where_drive == 4])
+        id_point_away.extend([i.point.id_point for i in dto_or if i.where_drive == 4])
         id_point_away.append(factory)
-        id_point_away.extend([i.people.id_point for i in dto_pas if i.where_drive == 2])
+        id_point_away.extend([i.point.id_point for i in dto_pas if i.where_drive == 2])
         id_point_away.append(driver)
         return id_point_away
 
@@ -285,6 +283,7 @@ class UtilityFunction:
             query_passenger = (
                 select(Passenger)
                 .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.point))
                 .options(joinedload(Passenger.driver))
                 .filter(Passenger.id_driver == id_driver)
                 .limit(100)
@@ -296,6 +295,7 @@ class UtilityFunction:
             query_or = (
                 select(OtherRoute)
                 .options(joinedload(OtherRoute.organization))
+                .options(joinedload(OtherRoute.point))
                 .options(joinedload(OtherRoute.driver))
                 .filter(OtherRoute.id_driver == id_driver)
                 .limit(100)
@@ -357,8 +357,8 @@ class UtilityFunction:
     @classmethod
     async def get_driver(cls, id_people):
         list_trip = []
-        point = await DataGet.find_all_point()
-        dict_point = {int(i.id_point): {'name_point': i.name_point, 'cost': i.cost, 'people': i.peoples} for i in point}
+        point = await DataGet.all_point()
+        dict_point = {int(i.id_point): {'name_point': i.name_point, 'cost': i.cost} for i in point}
         async with Session() as session:
             query = select(Driver).filter(Driver.id_people == id_people)
             result = await session.execute(query)
@@ -379,6 +379,25 @@ class UtilityFunction:
                 list_trip.append(trip)
             answer = {'all_point': dict_point, 'trip': list_trip}
         return answer
+
+    @classmethod
+    async def cost_route(cls, marker, point_of_factory, route: list, all_route, driver):
+        if marker == 1:
+            if len(route) != 0 and len(route[:route.index(point_of_factory) + 1]) > 2:
+                return await UtilityFunction.get_sum_cost(route[:route.index(point_of_factory)], all_route, driver)
+        elif marker == 2:
+            if len(route) != 0 and len(route[route.index(point_of_factory):]) > 1:
+                return await UtilityFunction.get_sum_cost(route[route.index(point_of_factory):], all_route, driver)
+        elif marker == 3:
+            if len(route) != 0 and len(route[route.index(point_of_factory):]) > 2:
+                rpa = route[route.index(point_of_factory) + 1:]
+                rpa.reverse()
+                return await UtilityFunction.get_sum_cost(rpa, all_route, driver)
+        elif marker == 4:
+            if len(route) != 0 and len(route[:route.index(point_of_factory) + 1]) > 1:
+                roa = route[:route.index(point_of_factory) + 1]
+                roa.reverse()
+                return await UtilityFunction.get_sum_cost(roa, all_route, driver)
 
     @classmethod
     async def get_count_gas(cls, id_people: int, data: DriverDate):
@@ -414,13 +433,21 @@ class UtilityFunction:
         point_of_factory = await UtilityFunction.get_id_point_factory()
 
         route_pas_fwd = list(map(lambda x: x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)],
-                                filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory)+1]) > 2, list_trip_month)))
+                                 filter(lambda x: len(x['point_trip_forward']) != 0 and len(
+                                     x['point_trip_forward'][:x['point_trip_forward'].index(point_of_factory) + 1]) > 2,
+                                        list_trip_month)))
         route_or_fwd = list(map(lambda x: x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):],
-                             filter(lambda x: len(x['point_trip_forward']) != 0 and len(x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):]) > 1, list_trip_month)))
-        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory)+1:],
-                                 filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][x['point_trip_away'].index(point_of_factory):]) > 2, list_trip_month)))
-        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1],
-                                filter(lambda x: len(x['point_trip_away']) != 0 and len(x['point_trip_away'][:x['point_trip_away'].index(point_of_factory)+1]) > 1, list_trip_month)))
+                                filter(lambda x: len(x['point_trip_forward']) != 0 and len(
+                                    x['point_trip_forward'][x['point_trip_forward'].index(point_of_factory):]) > 1,
+                                       list_trip_month)))
+        route_pas_away = list(map(lambda x: x['point_trip_away'][x['point_trip_away'].index(point_of_factory) + 1:],
+                                  filter(lambda x: len(x['point_trip_away']) != 0 and len(
+                                      x['point_trip_away'][x['point_trip_away'].index(point_of_factory):]) > 2,
+                                         list_trip_month)))
+        route_or_away = list(map(lambda x: x['point_trip_away'][:x['point_trip_away'].index(point_of_factory) + 1],
+                                 filter(lambda x: len(x['point_trip_away']) != 0 and len(
+                                     x['point_trip_away'][:x['point_trip_away'].index(point_of_factory) + 1]) > 1,
+                                        list_trip_month)))
 
         list(map(lambda x: x.reverse(), route_pas_away))
         list(map(lambda x: x.reverse(), route_or_away))
@@ -449,12 +476,16 @@ class UtilityFunction:
         balance_all = spent_round_all - all_refueling
         balance_month = spent_round_month - refueling_month
         result = balance_all - balance_month
+
         trip_list = [
             {'Дата поездки': str(i['date_trip']),
              'Маршрут на работу': i['trip_forward'],
              'Расстояние на работу': f"{i['distance_forward']} км",
+             'Стоимость поездки на работу': await UtilityFunction.cost_route(1, point_of_factory, i['point_trip_forward'], all_route, driver),
+             'Доплата за дополнительный маршрут': await UtilityFunction.co_pay_worker(i['other_route'], point_of_factory, i['point_trip_forward'], i['point_trip_away'], all_route, driver),
              'Маршрут с работы': i['trip_away'],
-             'Расстояние с работы': f"{i['distance_away']} км"} for i in list_trip_month]
+             'Расстояние с работы': f"{i['distance_away']} км",
+             'Стоимость поездки с работы': await UtilityFunction.cost_route(3, point_of_factory, i['point_trip_away'], all_route, driver)} for i in list_trip_month]
 
         return (f'Данные за {month[data.month_trip]}',
                 f'Расстояние {distance_month}',
@@ -462,6 +493,18 @@ class UtilityFunction:
                 f'Остаток текущий {balance_all}',
                 f'Остаток на начало месяца {result}'), trip_list
                 # f'Заправки {refueling_month}', list_refueling_month,
+
+    @classmethod
+    async def co_pay_worker(cls, route_worker, point_of_factory, route_fwd, route_away, all_route, driver):
+        count = 0
+        if route_worker:
+            for i in route_worker:
+                if 'Сотрудник' in i.organization.name_organization:
+                    count += 100
+            count += await UtilityFunction.cost_route(2, point_of_factory, route_fwd, all_route, driver)
+            count += await UtilityFunction.cost_route(4, point_of_factory, route_away, all_route, driver)
+            return count
+        return 0
 
 
 class DataPatch:
@@ -500,15 +543,14 @@ class DataPatch:
                 update(Organization)
                 .where(Organization.id_organization == id_organization)
                 .values(**(data.model_dump(exclude_none=True)))
-                .returning(Organization.id_organization, Organization.name_organization, Organization.id_point)
+                .returning(Organization.id_organization, Organization.name_organization)
             )
             result = await session.execute(query)
             update_organization = result.fetchone()
             await session.commit()
             if update_organization is not None:
                 return (f'Изменения для id {update_organization[0]}: '
-                        f'Название - {update_organization[1]} ',
-                        f'id адреса - {update_organization[2]} ')
+                        f'Название - {update_organization[1]} ')
 
     @classmethod
     async def update_route(cls, id_route: int, data: RouteUpdate):
@@ -552,7 +594,7 @@ class DataPatch:
                 .where(People.id_people == id_people)
                 .values(**(data.model_dump(exclude_none=True)))
                 .returning(People.id_people, People.first_name, People.last_name, People.patronymic,
-                           People.id_point, People.id_position, People.driving_licence, People.ppr_card)
+                           People.id_position, People.driving_licence, People.ppr_card)
             )
             result = await session.execute(query)
             update_people = result.fetchone()
@@ -641,7 +683,7 @@ class DataPatch:
                 update(Driver)
                 .where(Driver.id_driver == id_driver)
                 .values(**(data.model_dump(exclude_none=True)))
-                .returning(Driver.id_driver, Driver.id_people, Driver.date_trip, Driver.where_drive)
+                .returning(Driver.id_driver, Driver.id_people, Driver.id_point, Driver.date_trip, Driver.where_drive)
             )
             result = await session.execute(query)
             update_driver = result.fetchone()
@@ -715,6 +757,38 @@ class DataPatch:
             if update_car_fuel is not None:
                 return (f'Изменения для id {update_car_fuel[0]}: ',
                         f'Новое значение: {update_car_fuel}')
+
+    @classmethod
+    async def update_point_people(cls, id_point_people: int, data: PointPeopleUpdate):
+        async with Session() as session:
+            query = (
+                update(PointPeople)
+                .where(PointPeople.id_point_people == id_point_people)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(PointPeople.id_point_people, PointPeople.id_point, PointPeople.id_people)
+            )
+            result = await session.execute(query)
+            update_point_people = result.fetchone()
+            await session.commit()
+            if update_point_people is not None:
+                return (f'Изменения для id {update_point_people[0]}: ',
+                        f'Новое значение: {update_point_people}')
+
+    @classmethod
+    async def update_point_organization(cls, id_point_organization: int, data: PointOrganizationUpdate):
+        async with Session() as session:
+            query = (
+                update(PointOrganization)
+                .where(PointOrganization.id_point_organization == id_point_organization)
+                .values(**(data.model_dump(exclude_none=True)))
+                .returning(PointOrganization.id_point_organization, PointOrganization.id_point, PointOrganization.id_organization)
+            )
+            result = await session.execute(query)
+            update_point_organization = result.fetchone()
+            await session.commit()
+            if update_point_organization is not None:
+                return (f'Изменения для id {update_point_organization[0]}: ',
+                        f'Новое значение: {update_point_organization}')
 
 
 class Delete:
@@ -973,6 +1047,40 @@ class Delete:
             except NoResultFound:
                 return "Данной записи нет в базе"
 
+    @classmethod
+    async def del_point_people(cls, id_point_people):
+        async with Session() as session:
+            point_people = select(PointPeople).filter(PointPeople.id_point_people == id_point_people)
+            try:
+                result = await session.execute(point_people)
+                models = result.unique().scalars().one()
+                point_people = (
+                    delete(PointPeople)
+                    .where(PointPeople.id_point_people == id_point_people)
+                )
+                await session.execute(point_people)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
+    @classmethod
+    async def del_point_organization(cls, id_point_organization):
+        async with Session() as session:
+            point_organization = select(PointOrganization).filter(PointOrganization.id_point_organization == id_point_organization)
+            try:
+                result = await session.execute(point_organization)
+                models = result.unique().scalars().one()
+                point_organization = (
+                    delete(PointOrganization)
+                    .where(PointOrganization.id_point_organization == id_point_organization)
+                )
+                await session.execute(point_organization)
+                await session.commit()
+                return models
+            except NoResultFound:
+                return "Данной записи нет в базе"
+
 
 class DataLoads:
     @classmethod
@@ -1114,7 +1222,6 @@ class DataLoads:
                 "first_name": people.first_name,
                 "last_name": people.last_name,
                 "patronymic": people.patronymic,
-                "id_point": people.id_point,
                 "id_position": people.id_position,
                 "driving_licence": people.driving_licence,
                 "ppr_card": people.ppr_card
@@ -1167,8 +1274,7 @@ class DataLoads:
             await session.commit()
             return {
                 "id_organization": organization.id_organization,
-                "name_organization": organization.name_organization,
-                "id_point": organization.id_point
+                "name_organization": organization.name_organization
             }
 
     @classmethod
@@ -1184,6 +1290,7 @@ class DataLoads:
             return {
                 "id_driver": driver.id_driver,
                 "id_people": driver.id_people,
+                "id_point": driver.id_point,
                 "date_trip": driver.date_trip,
                 "where_drive": driver.where_drive
             }
@@ -1202,6 +1309,7 @@ class DataLoads:
                 "id_passenger": passenqer.id_passenger,
                 "order": passenqer.order,
                 "id_people": passenqer.id_people,
+                "id_point": passenqer.id_point,
                 "id_driver": passenqer.id_driver,
                 "where_drive": passenqer.where_drive
             }
@@ -1220,6 +1328,7 @@ class DataLoads:
                 "id_other_route": other_route.id_other_route,
                 "order": other_route.order,
                 "id_organization": other_route.id_organization,
+                "id_point": other_route.id_point,
                 "id_driver": other_route.id_driver,
                 "where_drive": other_route.where_drive
             }
@@ -1240,6 +1349,38 @@ class DataLoads:
                 "id_people": refueling.id_people,
                 "quantity": refueling.quantity,
                 "date_refueling": refueling.date_refueling
+            }
+
+    @classmethod
+    async def add_point_people(cls, data: PointPeopleAdd) -> dict:
+        async with Session() as session:
+            query = select(PointPeople.id_point_people)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            point_people = PointPeople(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
+            session.add(point_people)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_point_people": point_people.id_point_people,
+                "id_point": point_people.id_point,
+                "id_people": point_people.id_people
+            }
+
+    @classmethod
+    async def add_point_organization(cls, data: PointOrganizationAdd) -> dict:
+        async with Session() as session:
+            query = select(PointOrganization.id_point_organization)
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            point_organization = PointOrganization(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
+            session.add(point_organization)
+            await session.flush()
+            await session.commit()
+            return {
+                "id_point_organization": point_organization.id_point_organization,
+                "id_point": point_organization.id_point,
+                "id_organization": point_organization.id_organization
             }
 
     @classmethod
@@ -1295,7 +1436,7 @@ class DataGet:
             result = await session.execute(query)
             models = result.unique().scalars().all()
             dto = [NamePoint.model_validate(row, from_attributes=True) for row in models]
-            dict_points = {int(i.id_point):i.name_point for i in dto}
+            dict_points = {int(i.id_point): i.name_point for i in dto}
             return dict_points
 
     @staticmethod
@@ -1310,7 +1451,11 @@ class DataGet:
     @staticmethod
     async def find_all_point():
         async with Session() as session:
-            query = select(Point).options(selectinload(Point.peoples))
+            query = (
+                select(Point)
+                .options(selectinload(Point.point_peoples))
+                .options(selectinload(Point.point_organizations))
+            )
             result = await session.execute(query)
             models = result.unique().scalars().all()
             dto = [FullPointRe.model_validate(row, from_attributes=True) for row in models]
@@ -1359,7 +1504,6 @@ class DataGet:
             dto = [FullCarRe.model_validate(row, from_attributes=True) for row in models]
             return dto
 
-
     @staticmethod
     async def find_all_car_fuel():
         async with Session() as session:
@@ -1399,7 +1543,6 @@ class DataGet:
         async with Session() as session:
             query = (
                 select(People)
-                .options(joinedload(People.point))
                 .options(joinedload(People.position))
                 .options(selectinload(People.cars))
                 .limit(20)
@@ -1437,13 +1580,10 @@ class DataGet:
     @staticmethod
     async def find_all_organization():
         async with Session() as session:
-            query = (
-                select(Organization)
-                .options(joinedload(Organization.point))
-            )
+            query = select(Organization)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            dto = [FullOrganizationRe.model_validate(row, from_attributes=True) for row in models]
+            dto = [FullOrganization.model_validate(row, from_attributes=True) for row in models]
             return dto
 
     @staticmethod
@@ -1451,7 +1591,6 @@ class DataGet:
         async with Session() as session:
             query = (
                 select(People)
-                .options(joinedload(People.point))
                 .options(joinedload(People.position))
                 .options(selectinload(People.cars))
                 .filter(People.id_people == user_id)
@@ -1466,7 +1605,6 @@ class DataGet:
         async with Session() as session:
             query = (
                 select(People)
-                .options(joinedload(People.point))
                 .options(joinedload(People.position))
                 .options(selectinload(People.cars))
                 .filter(People.driving_licence != '')
@@ -1476,7 +1614,6 @@ class DataGet:
             models = result.unique().scalars().all()
             dto = [FullPeopleRe.model_validate(row, from_attributes=True) for row in models]
             return dto
-
 
     @staticmethod
     async def find_driver_of_date(now_date_trip):
@@ -1542,6 +1679,24 @@ class DataGet:
             result = await session.execute(query)
             models = result.scalars().all()
             dto = [FullRefuelingRe.model_validate(row, from_attributes=True) for row in models]
+            return dto
+
+    @staticmethod
+    async def find_all_point_people():
+        async with Session() as session:
+            query = select(PointPeople)
+            result = await session.execute(query)
+            models = result.scalars().all()
+            dto = [FullPointPeople.model_validate(row, from_attributes=True) for row in models]
+            return dto
+
+    @staticmethod
+    async def find_all_point_organization():
+        async with Session() as session:
+            query = select(PointOrganization)
+            result = await session.execute(query)
+            models = result.scalars().all()
+            dto = [FullPointOrganization.model_validate(row, from_attributes=True) for row in models]
             return dto
 
     @staticmethod

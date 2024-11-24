@@ -43,11 +43,11 @@ def description(address1, address2, la1, lon1, la2, lon2):
     b = f' Для названия: {address2} \n "latitude": {la2}, "longitude": {lon2}'
     return print(a), print(b)
 
+# п. Мирный, Нефтянников, 62
+name_address_start = 'Завод'
+name_address_finish = 'Мирный, Нефтяников, 62'
 
-name_address_start = 'Крутые ключи, Мира, 21'
-name_address_finish = 'Зубчаниновка, Борисоглебская, 34А'
-
-print(get_name_address('53.306976, 50.291328'))
+print(get_name_address('53.505223, 50.281860'))
 
 if name_address_start == 'Завод':
     finish_geo_position = get_geo_position(name_address_finish)

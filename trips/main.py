@@ -13,9 +13,11 @@ from trips.router import router_car_fuel as car_fuel, router_people as people, r
 from trips.router import router_driver as driver, router_passenger as passenger, router_refueling as refueling
 from trips.router import router_fuel as fuel, router_wd as wd, router_organization as organization
 from trips.router import router_other_route as other_route, router_role as role, router_identification as identification
+from trips.router import router_point_people as point_people, router_point_organization as point_organization
 
 from trips.pages.router import router_page
 #SALT=djjfjj53jjd@djdjd
+# 7655905402:AAEpSn3G9t09WXO0vjzZAZPe1MskiF9Qb6A
 
 
 @asynccontextmanager
@@ -47,6 +49,8 @@ app_route.include_router(passenger)
 app_route.include_router(other_route)
 app_route.include_router(refueling)
 app_route.include_router(router_page)
+app_route.include_router(point_people)
+app_route.include_router(point_organization)
 
 
 origins = [

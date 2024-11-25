@@ -18,10 +18,10 @@ from datetime import datetime, date
 from typing_extensions import Annotated
 
 from config import PG_DB, PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PPR
-from trips.models import Session, Point, Car, Driver, Position, Refueling, Fuel
+from trips.models import Session, Point, Car, Driver, Position, Refueling, Fuel, Passenger, OtherRoute
 from trips.reposit import UtilityFunction
 from trips.schema import FullPointRe, FullPeopleRe, PointDrivingLicenceRe, FullDriverRe, FullCarRe, FullPeople, \
-    FullFuel, FullRefuelingRe, FullRefueling, DriverUpdate
+    FullFuel, FullRefuelingRe, FullRefueling, DriverUpdate, PassengerUpdate, OtherRouteUpdate
 
 from fastapi import FastAPI, Body
 from fastapi.responses import FileResponse
@@ -59,23 +59,56 @@ def replace_str(string):
 
 async def update_driver():
     async with Session() as session:
-        data = DriverUpdate(id_point=1)
+        data = DriverUpdate(id_point=13)
         query = (
             update(Driver)
-            .where(Driver.id_driver == 389)
+            .where(Driver.id_people == 10)
             .values(**(data.model_dump(exclude_none=True)))
             .returning(Driver.id_driver, Driver.id_point)
         )
         result = await session.execute(query)
-        up_driver = result.fetchone()
+        up_driver = result.fetchall()
         await session.commit()
         if up_driver is not None:
             return (f'Изменения для id {up_driver[0]}: ',
                     f'название - {up_driver[1]} ')
 
 
+async def update_passenger():
+    async with Session() as session:
+        data = PassengerUpdate(id_point=4)
+        query = (
+            update(Passenger)
+            .where(Passenger.id_people == 15)
+            .values(**(data.model_dump(exclude_none=True)))
+            .returning(Passenger.id_passenger, Passenger.id_point)
+        )
+        result = await session.execute(query)
+        up_passenger = result.fetchall()
+        await session.commit()
+        if up_passenger is not None:
+            return (f'Изменения для id {up_passenger[0]}: ',
+                    f'название - {up_passenger[1]} ')
 
-asyncio.run(update_driver())
+
+async def update_or():
+    async with Session() as session:
+        data = OtherRouteUpdate(id_point=16)
+        query = (
+            update(OtherRoute)
+            .where(OtherRoute.id_organization == 10)
+            .values(**(data.model_dump(exclude_none=True)))
+            .returning(OtherRoute.id_organization, OtherRoute.id_point)
+        )
+        result = await session.execute(query)
+        up_or = result.fetchall()
+        await session.commit()
+        if up_or is not None:
+            return (f'Изменения для id {up_or[0]}: ',
+                    f'название - {up_or[1]} ')
+
+
+#asyncio.run(update_or())
 #replace_str(a)
 
 # print(asyncio.run(Operation.id_factory()))

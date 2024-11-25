@@ -506,6 +506,30 @@ class UtilityFunction:
             return count
         return 0
 
+    @classmethod
+    async def check_people_address(cls, people_address):
+        async with Session() as session:
+            query = (
+                select(PointPeople.id_point_people)
+                .filter(and_(PointPeople.id_people == people_address.id_people),
+                        (PointPeople.id_point == people_address.id_point))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().first()
+            return models
+
+    @classmethod
+    async def check_organization_address(cls, organization_address):
+        async with Session() as session:
+            query = (
+                select(PointOrganization.id_point_organization)
+                .filter(and_(PointOrganization.id_organization == organization_address.id_organization),
+                        (PointOrganization.id_point == organization_address.id_point))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().first()
+            return models
+
 
 class DataPatch:
     @classmethod
@@ -1357,7 +1381,7 @@ class DataLoads:
             query = select(PointPeople.id_point_people)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            point_people = PointPeople(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
+            point_people = PointPeople(**(data.model_dump()), id_point_people=await UtilityFunction.get_id(models))
             session.add(point_people)
             await session.flush()
             await session.commit()
@@ -1373,7 +1397,7 @@ class DataLoads:
             query = select(PointOrganization.id_point_organization)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            point_organization = PointOrganization(**(data.model_dump()), id_refueling=await UtilityFunction.get_id(models))
+            point_organization = PointOrganization(**(data.model_dump()), id_point_organization=await UtilityFunction.get_id(models))
             session.add(point_organization)
             await session.flush()
             await session.commit()
@@ -1621,6 +1645,7 @@ class DataGet:
             query = (
                 select(Driver)
                 .options(joinedload(Driver.people))
+                .options(joinedload(Driver.point))
                 .options(joinedload(Driver.wd))
                 .filter(Driver.date_trip == now_date_trip)
                 .limit(100)
@@ -1636,12 +1661,21 @@ class DataGet:
             query = (
                 select(Driver)
                 .options(joinedload(Driver.people))
+                .options(joinedload(Driver.point))
                 .options(joinedload(Driver.wd))
             )
             result = await session.execute(query)
             models = result.unique().scalars().all()
             dto = [FullDriverRe.model_validate(row, from_attributes=True) for row in models]
             return dto
+
+    @staticmethod
+    async def find_driver(id_driver: int):
+        async with Session() as session:
+            query = select(Driver).filter(Driver.id_driver == id_driver)
+            result = await session.execute(query)
+            models = result.unique().scalars().first()
+            return models
 
     @staticmethod
     async def find_all_passengers():
@@ -1658,6 +1692,14 @@ class DataGet:
             return dto
 
     @staticmethod
+    async def find_passenger(id_passenger: int):
+        async with Session() as session:
+            query = select(Passenger).filter(Passenger.id_passenger == id_passenger)
+            result = await session.execute(query)
+            models = result.unique().scalars().first()
+            return models
+
+    @staticmethod
     async def find_all_other_route():
         async with Session() as session:
             query = (
@@ -1668,6 +1710,14 @@ class DataGet:
             models = result.scalars().all()
             dto = [FullOtherRouteRe.model_validate(row, from_attributes=True) for row in models]
             return dto
+
+    @staticmethod
+    async def find_other_route(id_other_route: int):
+        async with Session() as session:
+            query = select(OtherRoute).filter(OtherRoute.id_other_route == id_other_route)
+            result = await session.execute(query)
+            models = result.unique().scalars().first()
+            return models
 
     @staticmethod
     async def find_all_refuelings():

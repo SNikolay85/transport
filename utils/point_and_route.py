@@ -45,7 +45,7 @@ def description(address1, address2, la1, lon1, la2, lon2):
 
 # п. Мирный, Нефтянников, 62
 name_address_start = 'Завод'
-name_address_finish = 'Мирный, Нефтяников, 62'
+name_address_finish = 'Новосемейкино, Матюгина, 54'
 
 print(get_name_address('53.505223, 50.281860'))
 

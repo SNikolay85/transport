@@ -7,7 +7,7 @@ from trips.models import Session, Point, Route, Fuel, Car, CarFuel, Position, Or
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, Role, PointPeople, PointOrganization
 
 current = os.getcwd()
-file_name_base = '../real_download_data1.json'
+file_name_base = '../real_download_data.json'
 full_path = os.path.join(current, file_name_base)
 
 

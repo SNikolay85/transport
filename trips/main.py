@@ -17,7 +17,6 @@ from trips.router import router_point_people as point_people, router_point_organ
 
 from trips.pages.router import router_page
 #SALT=djjfjj53jjd@djdjd
-# 7655905402:AAEpSn3G9t09WXO0vjzZAZPe1MskiF9Qb6A
 
 
 @asynccontextmanager

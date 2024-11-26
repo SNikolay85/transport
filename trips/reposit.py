@@ -487,11 +487,12 @@ class UtilityFunction:
              'Расстояние с работы': f"{i['distance_away']} км",
              'Стоимость поездки с работы': await UtilityFunction.cost_route(3, point_of_factory, i['point_trip_away'], all_route, driver)} for i in list_trip_month]
 
-        return (f'Данные за {month[data.month_trip]}',
+        return ((f'Данные за {month[data.month_trip]}',
                 f'Расстояние {distance_month}',
                 f'Заезды {sum(cost_passenger) + sum(cost_other_route) + sum(cost_worker)}',
                 f'Остаток текущий {balance_all}',
-                f'Остаток на начало месяца {result}'), trip_list
+                f'Остаток на начало месяца {result}'),
+                sorted(trip_list, key=lambda date_trip: date_trip['Дата поездки']))
                 # f'Заправки {refueling_month}', list_refueling_month,
 
     @classmethod

@@ -356,11 +356,16 @@ async def change_driver(id_driver: int, driver: Annotated[DriverUpdate, Depends(
     if driver.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
     current_driver = await DataGet.find_driver(id_driver)
-    if driver.id_people and driver.id_point is None:
-        driver.id_point = current_driver.id_point
-    elif driver.id_point and driver.id_people is None:
+    if driver.id_people is None and driver.id_point is not None:
         driver.id_people = current_driver.id_people
-    check_address = await UtilityFunction.check_people_address(driver)
+        check_address = await UtilityFunction.check_people_address(driver)
+    elif driver.id_point is None and driver.id_people is not None:
+        driver.id_point = current_driver.id_point
+        check_address = await UtilityFunction.check_people_address(driver)
+    elif driver.id_point is not None and driver.id_people is not None:
+        check_address = await UtilityFunction.check_people_address(driver)
+    else:
+        check_address = True
     if check_address is None:
         raise HTTPException(status_code=422, detail='Неверно указан адрес водителя')
     driver_data = await DataPatch.update_driver(id_driver, driver)

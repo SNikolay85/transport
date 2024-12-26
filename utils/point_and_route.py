@@ -45,9 +45,9 @@ def description(address1, address2, la1, lon1, la2, lon2):
 
 # п. Мирный, Нефтянников, 62
 name_address_start = 'Завод'
-name_address_finish = 'Московское шоссе, Красноярский район, Самарская область, 446378, Россия'
+name_address_finish = 'Волжский, улица Кржижановского, 51'
 
-print(get_name_address('53.401928, 50.331646'))
+print(get_name_address('53.428962, 50.122983'))
 
 if name_address_start == 'Завод':
     finish_geo_position = get_geo_position(name_address_finish)

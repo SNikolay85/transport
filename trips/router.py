@@ -426,11 +426,16 @@ async def change_passenger(id_passenger: int, passenger: Annotated[PassengerUpda
     if passenger.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
     current_passenger = await DataGet.find_passenger(id_passenger)
-    if passenger.id_people and passenger.id_point is None:
-        passenger.id_point = current_passenger.id_point
-    elif passenger.id_point and passenger.id_people is None:
+    if passenger.id_people is None and passenger.id_point is not None:
         passenger.id_people = current_passenger.id_people
-    check_address = await UtilityFunction.check_people_address(passenger)
+        check_address = await UtilityFunction.check_people_address(passenger)
+    elif passenger.id_point is None and passenger.id_people is not None:
+        passenger.id_point = current_passenger.id_point
+        check_address = await UtilityFunction.check_people_address(passenger)
+    elif passenger.id_point is not None and passenger.id_people is not None:
+        check_address = await UtilityFunction.check_people_address(passenger)
+    else:
+        check_address = True
     if check_address is None:
         raise HTTPException(status_code=422, detail='Неверно указан адрес пассажира')
     passenger_data = await DataPatch.update_passenger(id_passenger, passenger)
@@ -466,11 +471,16 @@ async def change_other_route(id_other_route: int, other_route: Annotated[OtherRo
     if other_route.model_dump(exclude_none=True) == {}:
         raise HTTPException(status_code=422, detail='Для изменения нужно указать хотябы один параметр')
     current_other_route = await DataGet.find_other_route(id_other_route)
-    if other_route.id_organization and other_route.id_point is None:
-        other_route.id_point = current_other_route.id_point
-    elif other_route.id_point and other_route.id_organization is None:
+    if other_route.id_organization is None and other_route.id_point is not None:
         other_route.id_organization = current_other_route.id_organization
-    check_address = await UtilityFunction.check_organization_address(other_route)
+        check_address = await UtilityFunction.check_organization_address(other_route)
+    elif other_route.id_point is None and other_route.id_organization is not None:
+        other_route.id_point = current_other_route.id_point
+        check_address = await UtilityFunction.check_organization_address(other_route)
+    elif other_route.id_point is not None and other_route.id_organization is not None:
+        check_address = await UtilityFunction.check_organization_address(other_route)
+    else:
+        check_address = True
     if check_address is None:
         raise HTTPException(status_code=422, detail='Неверно указан адрес организации')
     other_route_data = await DataPatch.update_other_route(id_other_route, other_route)

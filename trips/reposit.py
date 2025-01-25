@@ -741,7 +741,7 @@ class DataPatch:
                 .where(Passenger.id_passenger == id_passenger)
                 .values(**(data.model_dump(exclude_none=True)))
                 .returning(Passenger.id_passenger, Passenger.order, Passenger.id_people,
-                           Passenger.id_driver, Passenger.where_drive)
+                           Passenger.id_point, Passenger.id_driver, Passenger.where_drive)
             )
             result = await session.execute(query)
             update_passenger = result.fetchone()
@@ -758,7 +758,7 @@ class DataPatch:
                 .where(OtherRoute.id_other_route == id_other_route)
                 .values(**(data.model_dump(exclude_none=True)))
                 .returning(OtherRoute.id_other_route, OtherRoute.order, OtherRoute.id_organization,
-                           OtherRoute.id_driver, OtherRoute.where_drive)
+                           OtherRoute.id_point, OtherRoute.id_driver, OtherRoute.where_drive)
             )
             result = await session.execute(query)
             update_other_route = result.fetchone()
@@ -1684,6 +1684,7 @@ class DataGet:
             query = (
                 select(Passenger)
                 .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.point))
                 .options(joinedload(Passenger.driver))
                 .options(joinedload(Passenger.wd))
             )
@@ -1705,7 +1706,10 @@ class DataGet:
         async with Session() as session:
             query = (
                 select(OtherRoute)
-                .options(joinedload(OtherRoute.organization), joinedload(OtherRoute.driver), joinedload(OtherRoute.wd))
+                .options(joinedload(OtherRoute.organization))
+                .options(joinedload(OtherRoute.point))
+                .options(joinedload(OtherRoute.driver))
+                .options(joinedload(OtherRoute.wd))
             )
             result = await session.execute(query)
             models = result.scalars().all()

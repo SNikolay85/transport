@@ -59,6 +59,7 @@ class UtilityFunction:
     @classmethod
     def get_date_of_month(cls, months):
         year = datetime.now().year
+        #year = 2024
         match months:
             case 1: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]
             case 2: return [date(year, months, 1), date(year, months, calendar.monthrange(year, months)[1])]

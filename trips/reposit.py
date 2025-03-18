@@ -1416,6 +1416,8 @@ class DataLoads:
 
         list_new_refueling = []
         async with (Session() as session):
+            query = await session.execute(select(Fuel.name_fuel))
+            fuel_name = query.unique().scalars().all()
             query = (
                 select(Refueling)
                 .options(joinedload(Refueling.fuel), joinedload(Refueling.people))
@@ -1435,7 +1437,7 @@ class DataLoads:
                 'quantity': i['amount'],
                 'date_refueling': f"{i['date'][:10]} {i['date'][11:19]}"} for i in UtilityFunction.ppr(date_start, date_now)]
             for i in ppr:
-                if i not in ccx:
+                if i not in ccx and i['id_fuel'] in fuel_name:
                     i['id_fuel'] = await UtilityFunction.get_id_fuel(i['id_fuel'])
                     i['id_people'] = await UtilityFunction.get_id_people(i['id_people'])
                     i['date_refueling'] = datetime.strptime(i['date_refueling'], '%Y-%m-%d %H:%M:%S')

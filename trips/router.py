@@ -448,6 +448,12 @@ async def get_passenger():
     return {'passengers': passengers}
 
 
+@router_passenger.get('/{now_date_trip}')
+async def get_date_trip_passenger(now_date_trip: date):
+    passengers = await DataGet.find_passenger_of_date(now_date_trip)
+    return {'passengers': passengers}
+
+
 @router_passenger.delete('/{id_passenger}')
 async def del_passenger(id_passenger: int):
     passenger = await Delete.del_passenger(id_passenger)

@@ -322,7 +322,7 @@ class FullDriverRe(FullDriver):
 # --------------------------
 # schemes for model Passenger
 class PassengerAdd(BaseModel):
-    order: int
+    #order: int
     id_people: int
     id_point: int
     id_driver: int
@@ -330,7 +330,7 @@ class PassengerAdd(BaseModel):
 
 
 class PassengerUpdate(BaseModel):
-    order: Optional[int] = None
+    #order: Optional[int] = None
     id_people: Optional[int] = None
     id_point: Optional[int] = None
     id_driver: Optional[int] = None

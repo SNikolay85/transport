@@ -11,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError, NoResultFound
 
 from config import TOKEN_ORS, SALT, PPR
 from sqlalchemy import select, or_, and_, update, delete
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload, joinedload, contains_eager
 
 from trips.models import Point, Route, Fuel, Car, CarFuel, Position, Organization, Role
 from trips.models import WhereDrive, People, Driver, Passenger, Refueling, OtherRoute, IdentificationUser
@@ -157,6 +157,14 @@ class UtilityFunction:
     @staticmethod
     async def get_id(list_id: list) -> int:
         return max(list_id) + 1 if len(list_id) != 0 else 1
+
+    @staticmethod
+    async def get_order(data: PassengerAdd) -> int:
+        async with Session() as session:
+            query = select(Passenger.order).filter(and_(Passenger.id_driver == data.id_driver, Passenger.where_drive == data.where_drive))
+            result = await session.execute(query)
+            order = result.unique().scalars().all()
+        return 1 if len(order) == 0 else max(order) + 1
 
     @staticmethod
     async def get_geo(data: RouteAdd) -> list:
@@ -1327,7 +1335,7 @@ class DataLoads:
             query = select(Passenger.id_passenger)
             result = await session.execute(query)
             models = result.unique().scalars().all()
-            passenqer = Passenger(**(data.model_dump()), id_passenger=await UtilityFunction.get_id(models))
+            passenqer = Passenger(**(data.model_dump()), id_passenger=await UtilityFunction.get_id(models), order=await UtilityFunction.get_order(data))
             session.add(passenqer)
             await session.flush()
             await session.commit()
@@ -1703,6 +1711,27 @@ class DataGet:
             result = await session.execute(query)
             models = result.unique().scalars().first()
             return models
+
+    @staticmethod
+    async def find_passenger_of_date(now_date_trip):
+        async with Session() as session:
+            query = (
+                select(Passenger)
+                .options(joinedload(Passenger.people))
+                .options(joinedload(Passenger.point))
+                .options(joinedload(Passenger.driver))
+                .options(joinedload(Passenger.wd))
+            )
+            result = await session.execute(query)
+            models = result.unique().scalars().all()
+            dto = [FullPassengerRe.model_validate(row, from_attributes=True) for row in models]
+            list_passenger = []
+            for i in dto:
+                # list_passenger.append(i.driver.date_trip)
+                if i.driver.date_trip == now_date_trip:
+                    list_passenger.append(i.people)
+
+            return list_passenger
 
     @staticmethod
     async def find_all_other_route():

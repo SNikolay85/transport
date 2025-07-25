@@ -78,10 +78,10 @@ async def get_point():
 #     return points
 
 
-    @router_point.get('/')
-    async def get_point():
-        points = await DataGet.find_all_point()
-        return points
+@router_point.get('/')
+async def get_point():
+    points = await DataGet.find_all_point()
+    return points
 
 
 @router_point.delete('/{id_point}')
